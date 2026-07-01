@@ -1,0 +1,16 @@
+# microservice specific routes
+
+GET        /:claimId/upload-results/:reference          uk.gov.hmrc.charitiesclaimsvalidation.controllers.ClaimReferenceController.getUploadResult(claimId: String, reference: String)
+GET        /:claimId/upload-results                     uk.gov.hmrc.charitiesclaimsvalidation.controllers.ClaimController.getUploadSummary(claimId: String)
+
+DELETE     /:claimId/upload-results/:reference          uk.gov.hmrc.charitiesclaimsvalidation.controllers.ClaimReferenceController.deleteByReference(claimId: String, reference: String)
+
+POST       /:claimId/upscan-callback                    uk.gov.hmrc.charitiesclaimsvalidation.controllers.UpscanCallbackController.callback(claimId: String)
+
+DELETE     /:claimId/upload-results                     uk.gov.hmrc.charitiesclaimsvalidation.controllers.ClaimController.deleteClaims(claimId: String)
+
+POST       /:claimId/create-upload-tracking             uk.gov.hmrc.charitiesclaimsvalidation.controllers.ClaimController.uploadTracking(claimId: String)
+
+PUT        /:claimId/upload-results/:reference          uk.gov.hmrc.charitiesclaimsvalidation.controllers.ClaimReferenceController.updateFileStatus(claimId: String, reference: String)
+
+PATCH      /ttl/:claimId                                uk.gov.hmrc.charitiesclaimsvalidation.controllers.ClaimController.touchTtl(claimId: String)
