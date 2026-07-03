@@ -15,6 +15,7 @@ object AppDependencies {
     "org.typelevel"     %% "cats-effect"               % catsEffectVersion,
     "uk.gov.hmrc"       %% "bootstrap-backend-play-30" % bootstrapVersion,
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-30"        % hmrcMongoVersion,
+    "uk.gov.hmrc"       %% "crypto-json-play-30"       % "8.4.0",
     "eu.timepit"        %% "refined"                   % "0.11.3"
   )
 

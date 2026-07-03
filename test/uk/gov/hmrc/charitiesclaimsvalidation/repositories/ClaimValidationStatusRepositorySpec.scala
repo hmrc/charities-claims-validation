@@ -21,7 +21,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.mockito.MockitoSugar
-import uk.gov.hmrc.charitiesclaimsvalidation.config.AppConfig
+import uk.gov.hmrc.charitiesclaimsvalidation.config.{AppConfig, FakeEncrypterDecrypter}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.FileStatus.{AwaitingUpload, Verifying}
@@ -48,7 +48,7 @@ class ClaimValidationStatusRepositorySpec
   when(mockConfig.retryInitialDelay).thenReturn(50.millis)
   when(mockConfig.retryMaxDelay).thenReturn(500.millis)
 
-  private val repository   = new ClaimValidationStatusRepository(mongoComponent, mockConfig)
+  private val repository   = new ClaimValidationStatusRepository(mongoComponent, mockConfig, new FakeEncrypterDecrypter())
   private val claimId      = "test-claim-123"
   private val otherClaimId = "test-claim-124"
   private val ref1         = "ref-uuid-001"

@@ -26,6 +26,7 @@ import play.api.Logging
 import play.api.libs.json.Json
 import uk.gov.hmrc.charitiesclaimsvalidation.config.AppConfig
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{ClaimValidationStatus, ClaimValidationSummary, FileStatus, ValidationType}
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 
@@ -36,12 +37,13 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ClaimValidationStatusRepository @Inject() (
   mongoComponent: MongoComponent,
-  config: AppConfig
+  config: AppConfig,
+  crypto: Encrypter with Decrypter
 )(implicit ec: ExecutionContext)
     extends PlayMongoRepository[ClaimValidationStatus](
       mongoComponent = mongoComponent,
       collectionName = "claim-validation-status",
-      domainFormat = ClaimValidationStatus.format,
+      domainFormat = ClaimValidationStatus.encryptedFormat(using crypto),
       indexes = ClaimValidationStatusRepository.indexes(config.ttl, config.isTtlEnabled),
       replaceIndexes = config.replaceIndexes
     )

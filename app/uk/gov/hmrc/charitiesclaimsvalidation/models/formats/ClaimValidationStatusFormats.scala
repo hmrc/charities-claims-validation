@@ -20,6 +20,7 @@ import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{AwaitingUploadStatus, ClaimValidationStatus, CommunityBuildingData, ConnectedCharitiesData, FailureDetails, GiftAidScheduleData, OtherIncomeData, ValidatedStatus, ValidatingStatus, ValidationError, ValidationFailedStatus, ValidationType, VerificationFailedStatus, VerifyingStatus}
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.Instant
@@ -124,15 +125,18 @@ object ClaimValidationStatusFormats {
       )
   )
 
-  implicit val claimValidationStatusFormat: OFormat[ClaimValidationStatus] = new OFormat[ClaimValidationStatus] {
+  private def buildFormat(
+    validatedFmt: OFormat[ValidatedStatus],
+    validationFailedFmt: OFormat[ValidationFailedStatus]
+  ): OFormat[ClaimValidationStatus] = new OFormat[ClaimValidationStatus] {
     override def writes(status: ClaimValidationStatus): JsObject = {
       val baseJson = status match {
         case s: AwaitingUploadStatus     => awaitingUploadFormat.writes(s)
         case s: VerifyingStatus          => verifyingFormat.writes(s)
         case s: VerificationFailedStatus => verificationFailedFormat.writes(s)
         case s: ValidatingStatus         => validatingFormat.writes(s)
-        case s: ValidatedStatus          => validatedFormat.writes(s)
-        case s: ValidationFailedStatus   => validationFailedFormat.writes(s)
+        case s: ValidatedStatus          => validatedFmt.writes(s)
+        case s: ValidationFailedStatus   => validationFailedFmt.writes(s)
       }
       baseJson + ("fileStatus" -> JsString(status.fileStatus))
     }
@@ -143,10 +147,76 @@ object ClaimValidationStatusFormats {
         case "VERIFYING"           => verifyingFormat.reads(json)
         case "VERIFICATION_FAILED" => verificationFailedFormat.reads(json)
         case "VALIDATING"          => validatingFormat.reads(json)
-        case "VALIDATED"           => validatedFormat.reads(json)
-        case "VALIDATION_FAILED"   => validationFailedFormat.reads(json)
+        case "VALIDATED"           => validatedFmt.reads(json)
+        case "VALIDATION_FAILED"   => validationFailedFmt.reads(json)
         case other                 => JsError(s"Unknown fileStatus: $other")
       }
     }
   }
+
+  implicit val claimValidationStatusFormat: OFormat[ClaimValidationStatus] =
+    buildFormat(validatedFormat, validationFailedFormat)
+
+  private def encryptedPayload[T](implicit base: Format[T], crypto: Encrypter with Decrypter): Format[T] = {
+    val w: Writes[T] = SensitiveWrapper.writes[T](base, crypto).contramap[T](SensitiveWrapper(_))
+    val r: Reads[T]  = SensitiveWrapper.reads[T](base, crypto).map(_.decryptedValue)
+    Format(r, w)
+  }
+
+  private def validatedFormatEncrypted(using Encrypter with Decrypter): OFormat[ValidatedStatus] = (
+    (__ \ "_id" \ "claimId").format[String] and
+      (__ \ "_id" \ "reference").format[String] and
+      (__ \ "validationType").format[ValidationType] and
+      (__ \ "giftAidScheduleData").formatNullable(using encryptedPayload[GiftAidScheduleData]) and
+      (__ \ "otherIncomeData").formatNullable(using encryptedPayload[OtherIncomeData]) and
+      (__ \ "communityBuildingsData").formatNullable(using encryptedPayload[CommunityBuildingData]) and
+      (__ \ "connectedCharitiesData").formatNullable(using encryptedPayload[ConnectedCharitiesData]) and
+      (__ \ "createdAt").format[Instant] and
+      (__ \ "updatedAt").format[Instant]
+  )(
+    ValidatedStatus.apply,
+    (s: ValidatedStatus) =>
+      (
+        s.claimId,
+        s.reference,
+        s.validationType,
+        s.giftAidScheduleData,
+        s.otherIncomeData,
+        s.communityBuildingsData,
+        s.connectedCharitiesData,
+        s.createdAt,
+        s.updatedAt
+      )
+  )
+
+  private def validationFailedFormatEncrypted(using Encrypter with Decrypter): OFormat[ValidationFailedStatus] = (
+    (__ \ "_id" \ "claimId").format[String] and
+      (__ \ "_id" \ "reference").format[String] and
+      (__ \ "validationType").format[ValidationType] and
+      (__ \ "giftAidScheduleData").formatNullable(using encryptedPayload[GiftAidScheduleData]) and
+      (__ \ "otherIncomeData").formatNullable(using encryptedPayload[OtherIncomeData]) and
+      (__ \ "communityBuildingsData").formatNullable(using encryptedPayload[CommunityBuildingData]) and
+      (__ \ "connectedCharitiesData").formatNullable(using encryptedPayload[ConnectedCharitiesData]) and
+      (__ \ "errors").format[Seq[ValidationError]] and
+      (__ \ "createdAt").format[Instant] and
+      (__ \ "updatedAt").format[Instant]
+  )(
+    ValidationFailedStatus.apply,
+    (s: ValidationFailedStatus) =>
+      (
+        s.claimId,
+        s.reference,
+        s.validationType,
+        s.giftAidScheduleData,
+        s.otherIncomeData,
+        s.communityBuildingsData,
+        s.connectedCharitiesData,
+        s.errors,
+        s.createdAt,
+        s.updatedAt
+      )
+  )
+
+  def encryptedClaimValidationStatusFormat(using Encrypter with Decrypter): OFormat[ClaimValidationStatus] =
+    buildFormat(validatedFormatEncrypted, validationFailedFormatEncrypted)
 }
