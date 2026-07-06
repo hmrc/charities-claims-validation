@@ -19,6 +19,7 @@ package uk.gov.hmrc.charitiesclaimsvalidation.models.domain
 import play.api.libs.json.OFormat
 import uk.gov.hmrc.charitiesclaimsvalidation.models.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.formats.ClaimValidationStatusFormats
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 
 import java.time.Instant
 
@@ -106,4 +107,7 @@ final case class ValidationFailedStatus(
 
 object ClaimValidationStatus {
   implicit val format: OFormat[ClaimValidationStatus] = ClaimValidationStatusFormats.claimValidationStatusFormat
+
+  def encryptedFormat(using Encrypter with Decrypter): OFormat[ClaimValidationStatus] =
+    ClaimValidationStatusFormats.encryptedClaimValidationStatusFormat
 }

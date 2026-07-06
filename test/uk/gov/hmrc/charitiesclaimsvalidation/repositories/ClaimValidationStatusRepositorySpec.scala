@@ -25,6 +25,7 @@ import uk.gov.hmrc.charitiesclaimsvalidation.config.AppConfig
 import uk.gov.hmrc.charitiesclaimsvalidation.models.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.FileStatus.{AwaitingUpload, Verifying}
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter, SymmetricCryptoFactory}
 import uk.gov.hmrc.mongo.test.MongoSupport
 
 import java.time.Instant
@@ -48,7 +49,9 @@ class ClaimValidationStatusRepositorySpec
   when(mockConfig.retryInitialDelay).thenReturn(50.millis)
   when(mockConfig.retryMaxDelay).thenReturn(500.millis)
 
-  private val repository   = new ClaimValidationStatusRepository(mongoComponent, mockConfig)
+  private val crypto: Encrypter with Decrypter =
+    SymmetricCryptoFactory.aesGcmCrypto("ci+wy7C6jftPw6tMdjnV60T+bJOgwDXEHmYk4XWKbsM=")
+  private val repository   = new ClaimValidationStatusRepository(mongoComponent, mockConfig, crypto)
   private val claimId      = "test-claim-123"
   private val otherClaimId = "test-claim-124"
   private val ref1         = "ref-uuid-001"

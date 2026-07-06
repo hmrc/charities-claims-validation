@@ -19,6 +19,8 @@ package uk.gov.hmrc.charitiesclaimsvalidation
 import cats.effect.unsafe.IORuntime
 import play.api.{Configuration, Environment}
 import play.api.inject.{Binding, Module as AppModule}
+import uk.gov.hmrc.charitiesclaimsvalidation.config.CryptoProvider
+import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 
 import java.time.Clock
 
@@ -30,5 +32,6 @@ class Module extends AppModule:
   ): Seq[Binding[_]] =
     Seq(
       bind[Clock].toInstance(Clock.systemDefaultZone),
-      bind[IORuntime].toInstance(IORuntime.global)
+      bind[IORuntime].toInstance(IORuntime.global),
+      bind[Encrypter with Decrypter].toProvider[CryptoProvider]
     )
