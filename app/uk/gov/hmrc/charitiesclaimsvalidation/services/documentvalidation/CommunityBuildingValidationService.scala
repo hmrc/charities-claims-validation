@@ -22,7 +22,7 @@ import cats.effect.unsafe.IORuntime
 import cats.implicits.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.{domain, *}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{CommunityBuilding, CommunityBuildingData, ValidationError, ValidationType}
-import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NoRowsFoundException}
+import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NoRowsFoundException, NotAnOdsFileException}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.CommunityBuildingRow
 import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
 
@@ -95,6 +95,9 @@ class CommunityBuildingValidationService @Inject() ()(using ioRuntime: IORuntime
           (List(spreadsheetFileNotFound), None)
         case _: BadSheetNameException =>
           logger.warn("CommunityBuildings validation failed: incorrect sheet name")
+          (List(sheetNameIsDifferent), None)
+        case _: NotAnOdsFileException =>
+          logger.warn("CommunityBuildings validation failed: not an ODF spreadsheet")
           (List(sheetNameIsDifferent), None)
         case ex =>
           logger.error(s"CommunityBuildings validation failed with unexpected error: ${ex.getMessage}", ex)

@@ -21,7 +21,7 @@ import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import cats.implicits.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.*
-import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NoRowsFoundException}
+import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NoRowsFoundException, NotAnOdsFileException}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{OtherIncome, OtherIncomeData, ValidationError, ValidationType}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.OtherIncomeRow
 import CommonFileValidation.{removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
@@ -86,6 +86,9 @@ class OtherIncomeValidationService @Inject() ()(using ioRuntime: IORuntime) exte
           (List(spreadsheetFileNotFound), None)
         case _: BadSheetNameException =>
           logger.warn("OtherIncome validation failed: incorrect sheet name")
+          (List(sheetNameIsDifferent), None)
+        case _: NotAnOdsFileException =>
+          logger.warn("OtherIncome validation failed: not an ODF spreadsheet")
           (List(sheetNameIsDifferent), None)
         case ex =>
           logger.error(s"OtherIncome validation failed with unexpected error: ${ex.getMessage}", ex)
