@@ -22,7 +22,7 @@ import cats.effect.unsafe.IORuntime
 import cats.implicits.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.ConnectedCharitiesRow
-import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NoRowsFoundException}
+import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NoRowsFoundException, NotAnOdsFileException}
 import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
 
 import java.io.FileNotFoundException
@@ -67,6 +67,9 @@ class ConnectedCharitiesValidationService @Inject() ()(using ioRuntime: IORuntim
           (List(spreadsheetFileNotFound), None)
         case _: BadSheetNameException =>
           logger.warn("ConnectedCharities validation failed: incorrect sheet name")
+          (List(sheetNameIsDifferent), None)
+        case _: NotAnOdsFileException =>
+          logger.warn("ConnectedCharities validation failed: not an ODF spreadsheet")
           (List(sheetNameIsDifferent), None)
         case ex =>
           logger.error(s"ConnectedCharities validation failed with unexpected error: ${ex.getMessage}", ex)

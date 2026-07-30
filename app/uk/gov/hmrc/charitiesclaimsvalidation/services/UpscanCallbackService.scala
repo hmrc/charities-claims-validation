@@ -75,7 +75,7 @@ class UpscanCallbackService @Inject() (
           .validateFile(success, existingStatus.validationType)
           .flatMap {
             case Left(error) =>
-              logger.error(s"CommonFileValidation failed: $error")
+              logger.warn(s"CommonFileValidation failed: $error")
               handleValidationResult(
                 claimId,
                 existingStatus,

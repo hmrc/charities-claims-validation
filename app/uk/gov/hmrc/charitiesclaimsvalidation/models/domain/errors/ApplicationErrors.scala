@@ -24,3 +24,8 @@ case class BadSheetNameException(
   message: String = "The selected file must use the template required"
 ) extends Exception(message)
     with ApplicationErrors
+
+case class NotAnOdsFileException(
+  message: String = "The selected file is not an ODF spreadsheet"
+) extends Exception(message)
+    with ApplicationErrors

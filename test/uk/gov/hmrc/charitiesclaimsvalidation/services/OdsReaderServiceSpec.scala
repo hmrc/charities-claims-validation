@@ -17,10 +17,15 @@
 package uk.gov.hmrc.charitiesclaimsvalidation.services
 
 import cats.effect.unsafe.implicits.global
+import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NotAnOdsFileException}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.*
 import uk.gov.hmrc.charitiesclaimsvalidation.services.OdsReaderServiceSpec.*
-import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.OdsReaderService.{cellFromDocument, rowsFromDocument, withDocument, withDocumentStream}
+import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.OdsReaderService.{cellFromDocument, extractSheetName, rowsFromDocument, withDocument, withDocumentStream}
 import uk.gov.hmrc.charitiesclaimsvalidation.util.BaseSpec
+
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path}
+import java.util.zip.{ZipEntry, ZipOutputStream}
 
 class OdsReaderServiceSpec extends BaseSpec {
 
@@ -141,10 +146,52 @@ class OdsReaderServiceSpec extends BaseSpec {
 
         result shouldBe expectedResultConnectedCharitiesWithAttributes
       }
+
+    "raise NotAnOdsFileException when a file has no content.xml" in {
+      val notAnOds = zipContaining("xl/workbook.xml" -> "<workbook/>")
+
+      intercept[NotAnOdsFileException] {
+        withDocument(notAnOds.toString)(doc => rowsFromDocument[OtherIncomeRow](doc, OtherIncomeRow.layout)).unsafeRunSync()
+      }
+    }
+
+    "raise NotAnOdsFileException when a remote file has no content.xml" in {
+      val fileUrl = zipContaining("xl/workbook.xml" -> "<workbook/>").toUri.toURL.toString
+
+      intercept[NotAnOdsFileException] {
+        withDocumentStream(fileUrl)(doc => rowsFromDocument[OtherIncomeRow](doc, OtherIncomeRow.layout)).unsafeRunSync()
+      }
+    }
+
+    "raise BadSheetNameException when the document contains no sheets" in {
+      val noSheets = zipContaining("content.xml" -> "<office:document-content xmlns:office=\"urn:oasis:office\"/>")
+
+      intercept[BadSheetNameException] {
+        withDocument(noSheets.toString)(doc => extractSheetName(doc)).unsafeRunSync()
+      }
+    }
   }
 }
 
 object OdsReaderServiceSpec {
+
+  /* Builds a malformed .ods in a temp file */
+  def zipContaining(entries: (String, String)*): Path = {
+    val zipPath = Files.createTempFile("not-an-ods", ".ods")
+    val out     = new ZipOutputStream(Files.newOutputStream(zipPath))
+
+    try
+      entries.foreach { case (name, contents) =>
+        out.putNextEntry(new ZipEntry(name))
+        out.write(contents.getBytes(StandardCharsets.UTF_8))
+        out.closeEntry()
+      }
+    finally out.close()
+
+    zipPath.toFile.deleteOnExit()
+    zipPath
+  }
+
   val OtherIncomeGoodDataPath                     = "test/resources/otherincome/other_income_schedule-GoodData.ods"
   val OtherIncomeGoodDataWithAttributesPath       = "test/resources/otherincome/other_income_schedule-GoodDataWithAttributes.ods"
   val CommunityBuildingGoodDataPath               = "test/resources/communitybuildings/community_buildings_excel-GoodData.ods"

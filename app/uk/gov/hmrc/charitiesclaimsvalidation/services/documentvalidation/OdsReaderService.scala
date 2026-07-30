@@ -19,6 +19,7 @@ package uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation
 import cats.effect.*
 import org.w3c.dom.{Document, Element, Node}
 import play.api.Logger
+import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NotAnOdsFileException}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.*
 
 import java.net.URI
@@ -185,8 +186,8 @@ object OdsReaderService:
     IO.blocking {
       val entry = zip.getEntry("content.xml")
       if (entry == null) {
-        logger.error("content.xml not found in ODS ZipFile")
-        throw new IllegalStateException("content.xml not found inside ODS")
+        logger.warn("content.xml not found in ODS ZipFile")
+        throw NotAnOdsFileException()
       }
       val input = zip.getInputStream(entry)
       val doc   = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(input)
@@ -204,8 +205,8 @@ object OdsReaderService:
         entry = zin.getNextEntry
 
       if (entry == null) {
-        logger.error("content.xml not found in ODS ZipInputStream")
-        throw new IllegalStateException("content.xml not found inside ODS")
+        logger.warn("content.xml not found in ODS ZipInputStream")
+        throw NotAnOdsFileException()
       }
 
       val builder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
@@ -225,11 +226,11 @@ object OdsReaderService:
       if (sheetName.nonEmpty) {
         sheetName
       } else {
-        logger.error("First table element found but it has no name attribute")
-        throw new IllegalStateException("First table element found but it has no name attribute")
+        logger.warn("First table element found but it has no name attribute")
+        throw BadSheetNameException()
       }
     } else {
-      logger.error("No sheets (table:table) found in the ODS document")
-      throw new IllegalStateException("No sheets (table:table) found in the ODS document")
+      logger.warn("No sheets (table:table) found in the ODS document")
+      throw BadSheetNameException()
     }
   }
