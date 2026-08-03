@@ -88,6 +88,13 @@ class GiftAidValidationServiceSpec extends BaseSpec {
       validResult.value shouldBe validData
     }
 
+    "return the same valid rows with no errors when postcodes are padded with multiple spaces, as the as-is service does" in {
+      val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidMultipleSpacesPostcodePath).futureValue
+
+      errorResult shouldBe empty
+      validResult.value shouldBe validData
+    }
+
     "round a sub-penny amount to the nearest penny, as the as-is service does" in {
       val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidSubPennyAmountPath).futureValue
 
@@ -398,7 +405,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
         )
 
       "return no errors when postcode is valid or X" in {
-        List("X", "EC1A 1BB", "W1O 7HG", "SW1A 1AA", "GIR 0AA", "SWA 1AA").foreach { postcode =>
+        List("X", "EC1A 1BB", "W1O 7HG", "SW1A 1AA", "GIR 0AA", "SWA 1AA", "M99        2QD", "GIR      0AA").foreach { postcode =>
           val (errorRows, validRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", postcode, "", "", "24/06/15", "240.00"))
@@ -533,7 +540,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
         )
 
       "return no errors when donation date is valid" in {
-        List("31/12/25", "29/02/24", "11/01/26", "28/02/25").foreach { date =>
+        List("31/12/25", "29/02/24", "11/01/26", "28/02/25", "12/01/2026").foreach { date =>
           val (errorRows, validRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", "M99 2QD", "", "", date, "240.00"))
@@ -546,7 +553,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
       }
 
       "return a validation error when the donation date is not in valid format" in {
-        List("2026-01-12", "12/01/2026", "12-01-26", "30/02/25", "29/02/25").foreach { date =>
+        List("2026-01-12", "12-01-26", "30/02/25", "29/02/25", "30/02/2025", "29/02/2025", "1/1/2026").foreach { date =>
           val (errorRows, validRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", "M99 2QD", "", "", date, "240.00"))
@@ -559,9 +566,8 @@ class GiftAidValidationServiceSpec extends BaseSpec {
       }
 
       "return a validation error when the donation date is in future" in {
-        val formatter  = DateTimeFormatter.ofPattern("dd/MM/yy")
-        val futureDate = LocalDate.now().plusDays(1).format(formatter)
-        List(futureDate).foreach { date =>
+        val tomorrow = LocalDate.now().plusDays(1)
+        List("dd/MM/uu", "dd/MM/uuuu").map(pattern => tomorrow.format(DateTimeFormatter.ofPattern(pattern))).foreach { date =>
           val (errorRows, validRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", "M99 2QD", "", "", date, "240.00"))
@@ -613,6 +619,8 @@ object GiftAidValidationServiceSpec {
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-AmountDisplayFormats.ods").toURI.toURL.toString
   val giftAidSubPennyAmountPath: String =
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-SubPennyAmount.ods").toURI.toURL.toString
+  val giftAidMultipleSpacesPostcodePath: String =
+    new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-MultipleSpacesPostcode.ods").toURI.toURL.toString
   val giftAidBadDataPath: String =
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-BadData.ods").toURI.toURL.toString
   val earliestDonationDateBadDataPath: String =

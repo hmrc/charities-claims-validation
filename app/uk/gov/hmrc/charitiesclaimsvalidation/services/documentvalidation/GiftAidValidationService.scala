@@ -27,7 +27,6 @@ import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonF
 
 import java.io.FileNotFoundException
 import java.time.LocalDate
-import java.time.format.{DateTimeFormatter, ResolverStyle}
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
 import scala.concurrent.Future
@@ -148,8 +147,6 @@ object GiftAidValidationService {
       "validationService.giftAid.message.1"
     )
 
-  private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/uu").withResolverStyle(ResolverStyle.STRICT)
-
   def validateRows(
     inputRows: List[GiftAidDonationRowWithIndex]
   ): (List[ValidationError], List[GiftAidDonation]) = {
@@ -193,7 +190,7 @@ object GiftAidValidationService {
 
     if input.isEmpty then Left(ValidationError(fieldKey, missingMessage))
     else {
-      Try(LocalDate.parse(input, dateFormatter)).toOption match {
+      CommonFileValidation.parseDate(input) match {
         case None =>
           Left(
             ValidationError(
@@ -275,7 +272,7 @@ object GiftAidValidationService {
         "validationService.giftAid.message.7"
       )
     else {
-      Try(LocalDate.parse(input, dateFormatter)).toOption match {
+      CommonFileValidation.parseDate(input) match {
         case None =>
           invalid(
             field,
@@ -422,7 +419,7 @@ object GiftAidValidationService {
     isAggregated: Boolean
   ): V[Option[String]] = {
     val field     = s"postcode[$index]"
-    val input     = removeNonWesternCharacters(raw.trim)
+    val input     = removeNonWesternCharacters(raw.trim, true)
     val postCodeU = input.toUpperCase
 
     val isValidFormat = input == "X" || postCodeU.matches(

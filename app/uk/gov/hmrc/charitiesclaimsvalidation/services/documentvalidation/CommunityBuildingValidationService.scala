@@ -215,7 +215,7 @@ object CommunityBuildingValidationService {
 
   private def validatePostcode(raw: String, index: Int): V[String] = {
     val field = s"postcode[$index]"
-    val t     = removeNonWesternCharacters(raw)
+    val t     = removeNonWesternCharacters(raw, true)
 
     val postcodePattern =
       "^(GIR 0AA)|((([A-Z][0-9][0-9]?)|(([A-Z][A-HJ-Y][0-9][0-9]?)|(([A-Z][0-9][A-Z])|([A-Z][A-HJ-Y][0-9]?[A-Z])))) [0-9][A-Z]{2})$"

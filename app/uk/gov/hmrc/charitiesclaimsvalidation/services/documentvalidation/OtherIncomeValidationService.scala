@@ -28,7 +28,6 @@ import CommonFileValidation.{removeNonWesternCharacters, sheetNameIsDifferent, s
 
 import java.io.FileNotFoundException
 import java.time.LocalDate
-import java.time.format.{DateTimeFormatter, ResolverStyle}
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
 import scala.concurrent.Future
@@ -103,9 +102,8 @@ object OtherIncomeValidationService {
 
   final case class OtherRowWithIndex(index: Int, row: OtherIncomeRow)
 
-  private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/uu").withResolverStyle(ResolverStyle.STRICT)
-  private val moneyMin      = BigDecimal("0.01")
-  private val moneyMax      = BigDecimal("9999999999999.99")
+  private val moneyMin = BigDecimal("0.01")
+  private val moneyMax = BigDecimal("9999999999999.99")
 
   private val spreadsheetContainsNoData =
     ValidationError(
@@ -236,7 +234,7 @@ object OtherIncomeValidationService {
         s"validationService.otherIncome.message.7"
       )
     else {
-      Try(LocalDate.parse(t, dateFormatter)).toOption match {
+      CommonFileValidation.parseDate(t) match {
         case None =>
           invalid(
             field,
