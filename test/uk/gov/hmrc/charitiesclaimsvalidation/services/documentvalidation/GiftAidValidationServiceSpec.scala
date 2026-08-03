@@ -81,6 +81,13 @@ class GiftAidValidationServiceSpec extends BaseSpec {
       validResult.value shouldBe validDataWithMultipleSpaces
     }
 
+    "return the same valid rows with no errors when postcodes are padded with multiple spaces, as the as-is service does" in {
+      val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidMultipleSpacesPostcodePath).futureValue
+
+      errorResult shouldBe empty
+      validResult.value shouldBe validData
+    }
+
     "return a errors when the cells have invalid data given a bad data gift aid donations spreadsheet" in {
       val (errorResult, validResult) = new GiftAidValidationService().validate(earliestDonationDateBadDataPath).futureValue
 
@@ -378,7 +385,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
         )
 
       "return no errors when postcode is valid or X" in {
-        List("X", "EC1A 1BB", "W1O 7HG", "SW1A 1AA", "GIR 0AA", "SWA 1AA").foreach { postcode =>
+        List("X", "EC1A 1BB", "W1O 7HG", "SW1A 1AA", "GIR 0AA", "SWA 1AA", "M99        2QD", "GIR      0AA").foreach { postcode =>
           val (errorRows, validRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", postcode, "", "", "24/06/15", "240.00"))
@@ -589,6 +596,8 @@ object GiftAidValidationServiceSpec {
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-GoodData.ods").toURI.toURL.toString
   val giftAidGoodDataWithMultipleSpacesPath: String =
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-GoodDataWithMultipleSpaces.ods").toURI.toURL.toString
+  val giftAidMultipleSpacesPostcodePath: String =
+    new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-MultipleSpacesPostcode.ods").toURI.toURL.toString
   val giftAidBadDataPath: String =
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-BadData.ods").toURI.toURL.toString
   val earliestDonationDateBadDataPath: String =
