@@ -422,7 +422,7 @@ object GiftAidValidationService {
     isAggregated: Boolean
   ): V[Option[String]] = {
     val field     = s"postcode[$index]"
-    val input     = removeNonWesternCharacters(raw.trim)
+    val input     = removeNonWesternCharacters(raw.trim, true)
     val postCodeU = input.toUpperCase
 
     val isValidFormat = input == "X" || postCodeU.matches(

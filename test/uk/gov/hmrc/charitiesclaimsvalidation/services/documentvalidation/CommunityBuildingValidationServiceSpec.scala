@@ -448,7 +448,10 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         "DN55 1PT",
         "W1A 0AX",
         "EC1A 1BB",
-        "GIR 0AA"
+        "GIR 0AA",
+        "SWA 1AA",
+        "M99        2QD",
+        "GIR      0AA"
       )
 
       forAll(validPostcodes) { postcode =>
