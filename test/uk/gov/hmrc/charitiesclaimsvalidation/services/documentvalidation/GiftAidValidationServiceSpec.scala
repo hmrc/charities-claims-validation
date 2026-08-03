@@ -81,6 +81,26 @@ class GiftAidValidationServiceSpec extends BaseSpec {
       validResult.value shouldBe validDataWithMultipleSpaces
     }
 
+    "return the same valid rows with no errors regardless of how the amount cells are formatted for display" in {
+      val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidAmountDisplayFormatsPath).futureValue
+
+      errorResult shouldBe empty
+      validResult.value shouldBe validData
+    }
+
+    "round a sub-penny amount to the nearest penny, as the as-is service does" in {
+      val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidSubPennyAmountPath).futureValue
+
+      errorResult shouldBe empty
+      validResult.value.donations.map(_.donationAmount) shouldBe List(
+        BigDecimal("240.57"),
+        BigDecimal("250.00"),
+        BigDecimal("880.00"),
+        BigDecimal("80.00")
+      )
+      validResult.value.totalDonations shouldBe Some(BigDecimal("1450.57"))
+    }
+
     "return a errors when the cells have invalid data given a bad data gift aid donations spreadsheet" in {
       val (errorResult, validResult) = new GiftAidValidationService().validate(earliestDonationDateBadDataPath).futureValue
 
@@ -589,6 +609,10 @@ object GiftAidValidationServiceSpec {
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-GoodData.ods").toURI.toURL.toString
   val giftAidGoodDataWithMultipleSpacesPath: String =
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-GoodDataWithMultipleSpaces.ods").toURI.toURL.toString
+  val giftAidAmountDisplayFormatsPath: String =
+    new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-AmountDisplayFormats.ods").toURI.toURL.toString
+  val giftAidSubPennyAmountPath: String =
+    new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-SubPennyAmount.ods").toURI.toURL.toString
   val giftAidBadDataPath: String =
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-BadData.ods").toURI.toURL.toString
   val earliestDonationDateBadDataPath: String =
