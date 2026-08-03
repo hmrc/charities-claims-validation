@@ -28,7 +28,6 @@ import CommonFileValidation.{removeNonWesternCharacters, sheetNameIsDifferent, s
 
 import java.io.FileNotFoundException
 import java.time.LocalDate
-import java.time.format.{DateTimeFormatter, ResolverStyle}
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
 import scala.concurrent.Future
@@ -102,16 +101,6 @@ object OtherIncomeValidationService {
   type V[A] = ValidatedNel[ValidationError, A]
 
   final case class OtherRowWithIndex(index: Int, row: OtherIncomeRow)
-
-  private val dateFormatter = List(
-    DateTimeFormatter.ofPattern("dd/MM/uu").withResolverStyle(ResolverStyle.STRICT),
-    DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT)
-  )
-
-  private def parseDate(input: String): Option[LocalDate] =
-    dateFormatter.collectFirst(Function.unlift { formatter =>
-      Try(LocalDate.parse(input, formatter)).toOption
-    })
 
   private val moneyMin = BigDecimal("0.01")
   private val moneyMax = BigDecimal("9999999999999.99")
@@ -245,7 +234,7 @@ object OtherIncomeValidationService {
         s"validationService.otherIncome.message.7"
       )
     else {
-      parseDate(t) match {
+      CommonFileValidation.parseDate(t) match {
         case None =>
           invalid(
             field,

@@ -526,7 +526,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
       }
 
       "return a validation error when the donation date is not in valid format" in {
-        List("2026-01-12", "12-01-26", "30/02/25", "29/02/25").foreach { date =>
+        List("2026-01-12", "12-01-26", "30/02/25", "29/02/25", "30/02/2025", "29/02/2025", "1/1/2026").foreach { date =>
           val (errorRows, validRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", "M99 2QD", "", "", date, "240.00"))
@@ -539,9 +539,8 @@ class GiftAidValidationServiceSpec extends BaseSpec {
       }
 
       "return a validation error when the donation date is in future" in {
-        val formatter  = DateTimeFormatter.ofPattern("dd/MM/yy")
-        val futureDate = LocalDate.now().plusDays(1).format(formatter)
-        List(futureDate).foreach { date =>
+        val tomorrow = LocalDate.now().plusDays(1)
+        List("dd/MM/uu", "dd/MM/uuuu").map(pattern => tomorrow.format(DateTimeFormatter.ofPattern(pattern))).foreach { date =>
           val (errorRows, validRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", "M99 2QD", "", "", date, "240.00"))

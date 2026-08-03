@@ -119,6 +119,20 @@ class OtherIncomeValidationServiceSpec extends BaseSpec with TableDrivenProperty
       validResult shouldBe expectedResultForMultipleSpacesAndNewLines
     }
 
+    "return a payment date in either the dd/MM/uu or dd/MM/uuuu format" in {
+      List("01/01/25", "01/01/2025").foreach { date =>
+        val (errorRows, validRows) = OtherIncomeValidationService.validateRows(
+          List(OtherRowWithIndex(24, OtherIncomeRow("1", "Test User", date, "100.00", "10.00"))),
+          LocalDate.now()
+        )
+
+        withClue(s"$date: ") {
+          errorRows shouldBe empty
+          validRows.map(_.paymentDate) shouldBe List(LocalDate.of(2025, 1, 1))
+        }
+      }
+    }
+
     "return a list of invalid and valid rows given spreadsheet with invalid data" in {
       val (errorResult, validResult) = new OtherIncomeValidationService().validate(OtherIncomeBadDataPath).futureValue
       val expectedResult = Some(
@@ -161,6 +175,20 @@ class OtherIncomeValidationServiceSpec extends BaseSpec with TableDrivenProperty
         )
       )
       validResult shouldBe None
+    }
+
+    "return a validation error when the payment date is not in a valid format, dd/MM/uu or dd/MM/uuuu " in {
+      List("2025-01-01", "01-01-25", "1/1/2025", "30/02/25", "29/02/2025").foreach { date =>
+        val (errorRows, validRows) = OtherIncomeValidationService.validateRows(
+          List(OtherRowWithIndex(24, OtherIncomeRow("1", "Test User", date, "100.00", "10.00"))),
+          LocalDate.now()
+        )
+
+        withClue(s"$date: ") {
+          errorRows should contain(ValidationError("paymentDate[0]", "validationService.otherIncome.message.8"))
+          validRows shouldBe empty
+        }
+      }
     }
 
     "check invalid characters are removed from the input strings" in {
