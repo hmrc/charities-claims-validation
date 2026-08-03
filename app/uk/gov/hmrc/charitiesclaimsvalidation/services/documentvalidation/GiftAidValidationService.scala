@@ -148,7 +148,15 @@ object GiftAidValidationService {
       "validationService.giftAid.message.1"
     )
 
-  private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/uu").withResolverStyle(ResolverStyle.STRICT)
+  private val dateFormatter = List(
+    DateTimeFormatter.ofPattern("dd/MM/uu").withResolverStyle(ResolverStyle.STRICT),
+    DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT)
+  )
+
+  private def parseDate(input: String): Option[LocalDate] =
+    dateFormatter.collectFirst(Function.unlift { formatter =>
+      Try(LocalDate.parse(input, formatter)).toOption
+    })
 
   def validateRows(
     inputRows: List[GiftAidDonationRowWithIndex]
@@ -193,7 +201,7 @@ object GiftAidValidationService {
 
     if input.isEmpty then Left(ValidationError(fieldKey, missingMessage))
     else {
-      Try(LocalDate.parse(input, dateFormatter)).toOption match {
+      parseDate(input) match {
         case None =>
           Left(
             ValidationError(
@@ -275,7 +283,7 @@ object GiftAidValidationService {
         "validationService.giftAid.message.7"
       )
     else {
-      Try(LocalDate.parse(input, dateFormatter)).toOption match {
+      parseDate(input) match {
         case None =>
           invalid(
             field,
