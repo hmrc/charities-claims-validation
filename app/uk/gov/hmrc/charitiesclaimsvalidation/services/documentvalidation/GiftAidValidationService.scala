@@ -426,7 +426,7 @@ object GiftAidValidationService {
     val postCodeU = input.toUpperCase
 
     val isValidFormat = input == "X" || postCodeU.matches(
-      "^(GIR 0AA)|((([A-Z][0-9][0-9]?)|(([A-Z][A-HJ-Y][0-9][0-9]?)|(([A-Z][0-9][A-Z])|([A-Z][A-HJ-Y][0-9][A-Z])))) [0-9][A-Z]{2})$"
+      "^(GIR 0AA)|((([A-Z][0-9][0-9]?)|(([A-Z][A-HJ-Y][0-9][0-9]?)|(([A-Z][0-9][A-Z])|([A-Z][A-HJ-Y][0-9]?[A-Z])))) [0-9][A-Z]{2})$"
     )
     if (!isAggregated) {
       if (input.isEmpty) {
