@@ -25,8 +25,11 @@ import eu.timepit.refined.auto.autoUnwrap
 import org.w3c.dom.Document
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.BadSheetNameException
 
+import java.time.LocalDate
+import java.time.format.{DateTimeFormatter, ResolverStyle}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 // validationService.commonFile.message.1 = The selected file could not be uploaded
 // validationService.commonFile.message.2 = There is a problem with your spreadsheet
@@ -138,5 +141,15 @@ object CommonFileValidation {
 
   private def isBlankFileName(up: UpscanSuccessRequest): Boolean =
     up.uploadDetails.fileName.trim.isEmpty
+
+  private val dateFormatter = List(
+    DateTimeFormatter.ofPattern("dd/MM/uu").withResolverStyle(ResolverStyle.STRICT),
+    DateTimeFormatter.ofPattern("dd/MM/uuuu").withResolverStyle(ResolverStyle.STRICT)
+  )
+
+  def parseDate(input: String): Option[LocalDate] =
+    dateFormatter.collectFirst(Function.unlift { formatter =>
+      Try(LocalDate.parse(input, formatter)).toOption
+    })
 
 }
