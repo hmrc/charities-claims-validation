@@ -378,7 +378,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
         )
 
       "return no errors when postcode is valid or X" in {
-        List("X", "EC1A 1BB", "W1O 7HG", "SW1A 1AA").foreach { postcode =>
+        List("X", "EC1A 1BB", "W1O 7HG", "SW1A 1AA", "GIR 0AA", "SWA 1AA").foreach { postcode =>
           val (errorRows, validRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", postcode, "", "", "24/06/15", "240.00"))
