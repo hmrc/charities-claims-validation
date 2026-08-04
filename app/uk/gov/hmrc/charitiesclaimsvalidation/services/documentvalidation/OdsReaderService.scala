@@ -22,10 +22,12 @@ import play.api.Logger
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NotAnOdsFileException}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.*
 
+import java.math.RoundingMode
 import java.net.URI
 import java.nio.file.Paths
 import java.util.zip.{ZipFile, ZipInputStream}
 import javax.xml.parsers.DocumentBuilderFactory
+import scala.util.Try
 
 object OdsReaderService:
 
@@ -87,8 +89,11 @@ object OdsReaderService:
           val allCells = extractCells(rowElement, layout.cellRange.max)
 
           val selectedCells: List[String] =
-            layout.cellRange.toList.map { cellIndex =>
-              allCells.lift(cellIndex).getOrElse("")
+            layout.cellRange.toList.zipWithIndex.map { case (cellIndex, columnIndex) =>
+              allCells
+                .lift(cellIndex)
+                .map(cell => extractCellValue(cell, layout.columnFormats.getOrElse(columnIndex, CellFormat.Text)))
+                .getOrElse("")
             }
 
           summon[DocumentRowDecoder[A]]
@@ -122,20 +127,33 @@ object OdsReaderService:
     }
   }
 
-  private def extractCells(row: Element, maxColumns: Int): Vector[String] = {
+  private def extractCells(row: Element, maxColumns: Int): Vector[Element] = {
     val cells = row.getElementsByTagName("table:table-cell")
 
     (0 until cells.getLength).iterator
       .flatMap { i =>
         val cell   = cells.item(i).asInstanceOf[Element]
         val repeat = cell.getAttribute("table:number-columns-repeated").toIntOption.filter(_ >= 1).getOrElse(1)
-        val text   = extractCellText(cell)
-        Iterator.fill(repeat)(text)
+        Iterator.fill(repeat)(cell)
       }
       .take(maxColumns)
       .toVector
-      .padTo(maxColumns, "")
   }
+
+  private def extractCellValue(cell: Element, format: CellFormat): String =
+    format match {
+      case CellFormat.Money =>
+        roundedToPence(cell.getAttribute("office:value")).getOrElse(extractCellText(cell))
+      case CellFormat.Text =>
+        extractCellText(cell)
+    }
+
+  private val maxIntegerDigits = 20
+
+  private def roundedToPence(storedValue: String): Option[String] =
+    Try(BigDecimal(storedValue)).toOption
+      .filter(value => value.precision - value.scale <= maxIntegerDigits)
+      .map(_.bigDecimal.setScale(2, RoundingMode.HALF_EVEN).toPlainString)
 
   private def extractCellText(cell: Element): String = {
     val paragraphs = cell.getElementsByTagName("text:p")
@@ -179,7 +197,7 @@ object OdsReaderService:
       rowElement <- rows.lift(sheetCell.rowIndex)
       cells = rowElement.getElementsByTagName("table:table-cell")
       cell <- Option(cells.item(sheetCell.cellIndex)).map(_.asInstanceOf[Element])
-    } yield extractCellText(cell)).getOrElse("")
+    } yield extractCellValue(cell, sheetCell.format)).getOrElse("")
   }
 
   private def extractAndParseDocument(zip: ZipFile): IO[Document] = {

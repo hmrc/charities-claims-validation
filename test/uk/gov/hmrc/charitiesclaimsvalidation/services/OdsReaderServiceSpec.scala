@@ -34,7 +34,7 @@ class OdsReaderServiceSpec extends BaseSpec {
 
       val result = withDocument(OtherIncomeGoodDataPath)(doc => rowsFromDocument[OtherIncomeRow](doc, OtherIncomeRow.layout)).unsafeRunSync().head
 
-      result shouldBe OtherIncomeRow("1", "Test User", "01/01/25", "1,234.00", "56.00")
+      result shouldBe OtherIncomeRow("1", "Test User", "01/01/25", "1234.00", "56.00")
     }
 
     "read an ods document and extract a single cell value as string" in {
@@ -50,7 +50,7 @@ class OdsReaderServiceSpec extends BaseSpec {
 
       val result = withDocumentStream(fileUrl)(doc => rowsFromDocument[OtherIncomeRow](doc, OtherIncomeRow.layout)).unsafeRunSync().head
 
-      result shouldBe OtherIncomeRow("1", "Test User", "01/01/25", "1,234.00", "56.00")
+      result shouldBe OtherIncomeRow("1", "Test User", "01/01/25", "1234.00", "56.00")
 
     }
 
@@ -211,17 +211,17 @@ object OdsReaderServiceSpec {
   )
 
   val expectedResultCommBuidingWithAttributes: Seq[CommunityBuildingRow] = List(
-    CommunityBuildingRow("1", "The Vault - Test name", "50 \"Helloworld\" lane", "L20 3UD", "2023", "1,500.00", "2024", "2,500.00"),
-    CommunityBuildingRow("2", "Test        Building        Name", "39\n    Kingsbury.\nStreet", "L20 3UD", "2025", "2,000.00", "", ""),
-    CommunityBuildingRow("3", "Bootle Village\n\nHall", "Address:            '11A Grange Road'", "L20 1KL", "2025", "1,750.00", "", ""),
-    CommunityBuildingRow("4", "Name: John  Doe", "Address:  123\nLM:\nWillow school", "NE17 0FG", "2022", "3,890.00", "", ""),
-    CommunityBuildingRow("500", "500th Building", "120 Backworth park", "NE17 0FG", "2024", "3,456.00", "", "")
+    CommunityBuildingRow("1", "The Vault - Test name", "50 \"Helloworld\" lane", "L20 3UD", "2023", "1500.00", "2024", "2500.00"),
+    CommunityBuildingRow("2", "Test        Building        Name", "39\n    Kingsbury.\nStreet", "L20 3UD", "2025", "2000.00", "", ""),
+    CommunityBuildingRow("3", "Bootle Village\n\nHall", "Address:            '11A Grange Road'", "L20 1KL", "2025", "1750.00", "", ""),
+    CommunityBuildingRow("4", "Name: John  Doe", "Address:  123\nLM:\nWillow school", "NE17 0FG", "2022", "3890.00", "", ""),
+    CommunityBuildingRow("500", "500th Building", "120 Backworth park", "NE17 0FG", "2024", "3456.00", "", "")
   )
 
   val expectedResultOtherIncomeWithAttributes: Seq[OtherIncomeRow] = List(
-    OtherIncomeRow("1", "Test           User\nOther", "01/01/25", "1,234.00", "56.00"),
-    OtherIncomeRow("2", "Other income user", "28/02/24", "2,345.00", "87.00"),
-    OtherIncomeRow("200", "200th User", "03/05/24", "6,000.00", "80.00")
+    OtherIncomeRow("1", "Test           User\nOther", "01/01/25", "1234.00", "56.00"),
+    OtherIncomeRow("2", "Other income user", "28/02/24", "2345.00", "87.00"),
+    OtherIncomeRow("200", "200th User", "03/05/24", "6000.00", "80.00")
   )
 
   val expectedResultConnectedCharitiesWithAttributes: Seq[ConnectedCharitiesRow] = List(
