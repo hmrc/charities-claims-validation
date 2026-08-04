@@ -225,7 +225,7 @@ object CommunityBuildingValidationService {
         field,
         s"validationService.communityBuildings.message.7"
       )
-    else if !t.toUpperCase.matches(postcodePattern) then
+    else if !t.matches(postcodePattern) then
       invalid(
         field,
         s"validationService.communityBuildings.message.8"

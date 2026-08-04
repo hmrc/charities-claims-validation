@@ -418,11 +418,10 @@ object GiftAidValidationService {
     index: Int,
     isAggregated: Boolean
   ): V[Option[String]] = {
-    val field     = s"postcode[$index]"
-    val input     = removeNonWesternCharacters(raw.trim, true)
-    val postCodeU = input.toUpperCase
+    val field = s"postcode[$index]"
+    val input = removeNonWesternCharacters(raw.trim, true)
 
-    val isValidFormat = input == "X" || postCodeU.matches(
+    val isValidFormat = input == "X" || input.matches(
       "^(GIR 0AA)|((([A-Z][0-9][0-9]?)|(([A-Z][A-HJ-Y][0-9][0-9]?)|(([A-Z][0-9][A-Z])|([A-Z][A-HJ-Y][0-9]?[A-Z])))) [0-9][A-Z]{2})$"
     )
     if (!isAggregated) {
@@ -432,7 +431,7 @@ object GiftAidValidationService {
           "validationService.giftAid.message.20"
         ).invalidNel
       } else if (isValidFormat) {
-        Some(postCodeU).validNel
+        Some(input).validNel
       } else {
         ValidationError(
           field,
