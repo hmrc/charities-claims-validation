@@ -81,6 +81,14 @@ class GiftAidValidationServiceSpec extends BaseSpec {
       validResult.value shouldBe validDataWithMultipleSpaces
     }
 
+    "accept a previously overclaimed amount of zero, as the as-is service does" in {
+      val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidZeroOverclaimedPath).futureValue
+
+      errorResult shouldBe empty
+      validResult.value.prevOverclaimedGiftAid shouldBe Some(BigDecimal("0.00"))
+      validResult.value.donations shouldBe validData.donations
+    }
+
     "return the same valid rows with no errors regardless of how the date cells are formatted for display" in {
       val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidDateDisplayFormatsPath).futureValue
 
@@ -634,6 +642,8 @@ object GiftAidValidationServiceSpec {
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-GoodData.ods").toURI.toURL.toString
   val giftAidGoodDataWithMultipleSpacesPath: String =
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-GoodDataWithMultipleSpaces.ods").toURI.toURL.toString
+  val giftAidZeroOverclaimedPath: String =
+    new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-ZeroOverclaimed.ods").toURI.toURL.toString
   val giftAidDateDisplayFormatsPath: String =
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-DateDisplayFormats.ods").toURI.toURL.toString
   val giftAidLastCenturyDatePath: String =

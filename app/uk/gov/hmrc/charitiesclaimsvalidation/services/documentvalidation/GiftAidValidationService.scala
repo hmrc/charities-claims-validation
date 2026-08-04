@@ -214,11 +214,11 @@ object GiftAidValidationService {
     else {
       Try(BigDecimal(normalized)).toOption match {
         case Some(amount) =>
-          val scaleOk        = amount.scale == 2
-          val digitCnt       = amount.bigDecimal.unscaledValue.abs.toString.length
-          val digitsOk       = digitCnt <= 15
-          val positiveNumber = amount.signum > 0
-          if !scaleOk || !digitsOk || !positiveNumber then Left(ValidationError(fieldKey, errorMessage))
+          val scaleOk     = amount.scale == 2
+          val digitCnt    = amount.bigDecimal.unscaledValue.abs.toString.length
+          val digitsOk    = digitCnt <= 15
+          val notNegative = amount.signum >= 0
+          if !scaleOk || !digitsOk || !notNegative then Left(ValidationError(fieldKey, errorMessage))
           else Right(Some(amount))
         case None => Left(ValidationError(fieldKey, errorMessage))
       }
