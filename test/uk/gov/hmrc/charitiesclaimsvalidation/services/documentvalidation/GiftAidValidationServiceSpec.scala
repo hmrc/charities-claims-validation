@@ -467,7 +467,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
         )
 
       "return no errors when sponsored event is valid" in {
-        List("yes", "Yes", "").foreach { event =>
+        List("yes", "Yes", "YES", "iawn", "Iawn", "IAWN", " iawn ", "").foreach { event =>
           val (errorRows, validRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(
@@ -482,8 +482,26 @@ class GiftAidValidationServiceSpec extends BaseSpec {
         }
       }
 
+      "mark the donation as a sponsored event when the Welsh value is used" in {
+        List("yes", "iawn").foreach { event =>
+          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+            List(
+              GiftAidDonationRowWithIndex(
+                0,
+                GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", "M99 2QD", "", event, "24/06/15", "240.00")
+              )
+            )
+          )
+
+          withClue(s"$event: ") {
+            errorRows shouldBe empty
+            validRows.map(_.sponsoredEvent) shouldBe List(true)
+          }
+        }
+      }
+
       "return a validation error when the sponsored event is not in valid format" in {
-        List("No", "no", "False", "1").foreach { event =>
+        List("No", "no", "False", "1", "na", "ie", "iaw", "iawnn").foreach { event =>
           val (errorRows, validRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(
