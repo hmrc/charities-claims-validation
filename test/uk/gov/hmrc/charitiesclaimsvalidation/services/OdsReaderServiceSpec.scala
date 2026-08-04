@@ -34,7 +34,7 @@ class OdsReaderServiceSpec extends BaseSpec {
 
       val result = withDocument(OtherIncomeGoodDataPath)(doc => rowsFromDocument[OtherIncomeRow](doc, OtherIncomeRow.layout)).unsafeRunSync().head
 
-      result shouldBe OtherIncomeRow("1", "Test User", "01/01/25", "1234.00", "56.00")
+      result shouldBe OtherIncomeRow("1", "Test User", "01/01/2025", "1234.00", "56.00")
     }
 
     "read an ods document and extract a single cell value as string" in {
@@ -50,7 +50,7 @@ class OdsReaderServiceSpec extends BaseSpec {
 
       val result = withDocumentStream(fileUrl)(doc => rowsFromDocument[OtherIncomeRow](doc, OtherIncomeRow.layout)).unsafeRunSync().head
 
-      result shouldBe OtherIncomeRow("1", "Test User", "01/01/25", "1234.00", "56.00")
+      result shouldBe OtherIncomeRow("1", "Test User", "01/01/2025", "1234.00", "56.00")
 
     }
 
@@ -201,13 +201,13 @@ object OdsReaderServiceSpec {
   val connectedCharitiesGoodDataWithAttributesPath =
     "test/resources/connectedCharities/connected_charities_schedule__Excel_GoodDataWithAttributes.ods"
   val expectedResultGiftDataWithAttributes: Seq[GiftAidDonationRow] = List(
-    GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", "M99 2QD", "", "", "24/03/15", "240.00"),
-    GiftAidDonationRow("2", "Mr", "John", "Smith", "100      Champs Elysees,\n Paris", "X", "", "", "24/06/15", "250.00"),
-    GiftAidDonationRow("3", "", "", "", "", "", "One off Gift Aid donations", "", "31/03/15", "880.00"),
-    GiftAidDonationRow("4", "Miss", "B", "Chaudry", "21", "L43 4FB", "", "Yes", "26/04/15", "80.00"),
-    GiftAidDonationRow("4", "Miss", "B", "Chaudry", "21", "L43 4FB", "", "Yes", "26/04/15", "80.00"),
-    GiftAidDonationRow("4", "Miss", "B", "Chaudry", "21", "L43 4FB", "", "Yes", "28/02/25", "80.00"),
-    GiftAidDonationRow("1000", "Mr", "happy", "House del", "152A", "M99 2QD", "", "", "28/03/15", "240.00")
+    GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", "M99 2QD", "", "", "24/03/2015", "240.00"),
+    GiftAidDonationRow("2", "Mr", "John", "Smith", "100      Champs Elysees,\n Paris", "X", "", "", "24/06/2015", "250.00"),
+    GiftAidDonationRow("3", "", "", "", "", "", "One off Gift Aid donations", "", "31/03/2015", "880.00"),
+    GiftAidDonationRow("4", "Miss", "B", "Chaudry", "21", "L43 4FB", "", "Yes", "26/04/2015", "80.00"),
+    GiftAidDonationRow("4", "Miss", "B", "Chaudry", "21", "L43 4FB", "", "Yes", "26/04/2015", "80.00"),
+    GiftAidDonationRow("4", "Miss", "B", "Chaudry", "21", "L43 4FB", "", "Yes", "28/02/2025", "80.00"),
+    GiftAidDonationRow("1000", "Mr", "happy", "House del", "152A", "M99 2QD", "", "", "28/03/2015", "240.00")
   )
 
   val expectedResultCommBuidingWithAttributes: Seq[CommunityBuildingRow] = List(
@@ -219,9 +219,9 @@ object OdsReaderServiceSpec {
   )
 
   val expectedResultOtherIncomeWithAttributes: Seq[OtherIncomeRow] = List(
-    OtherIncomeRow("1", "Test           User\nOther", "01/01/25", "1234.00", "56.00"),
-    OtherIncomeRow("2", "Other income user", "28/02/24", "2345.00", "87.00"),
-    OtherIncomeRow("200", "200th User", "03/05/24", "6000.00", "80.00")
+    OtherIncomeRow("1", "Test           User\nOther", "01/01/2025", "1234.00", "56.00"),
+    OtherIncomeRow("2", "Other income user", "28/02/2024", "2345.00", "87.00"),
+    OtherIncomeRow("200", "200th User", "03/05/2024", "6000.00", "80.00")
   )
 
   val expectedResultConnectedCharitiesWithAttributes: Seq[ConnectedCharitiesRow] = List(

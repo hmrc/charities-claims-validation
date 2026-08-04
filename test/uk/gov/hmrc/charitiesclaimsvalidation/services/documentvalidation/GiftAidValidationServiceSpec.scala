@@ -81,6 +81,25 @@ class GiftAidValidationServiceSpec extends BaseSpec {
       validResult.value shouldBe validDataWithMultipleSpaces
     }
 
+    "return the same valid rows with no errors regardless of how the date cells are formatted for display" in {
+      val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidDateDisplayFormatsPath).futureValue
+
+      errorResult shouldBe empty
+      validResult.value shouldBe validData
+    }
+
+    "resolve a donation date before 2000 from the stored value rather than its two digit year" in {
+      val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidLastCenturyDatePath).futureValue
+
+      errorResult shouldBe empty
+      validResult.value.donations.map(_.donationDate) shouldBe List(
+        LocalDate.of(1999, 3, 24),
+        LocalDate.of(2015, 6, 24),
+        LocalDate.of(2015, 3, 31),
+        LocalDate.of(2015, 4, 26)
+      )
+    }
+
     "return the same valid rows with no errors regardless of how the amount cells are formatted for display" in {
       val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidAmountDisplayFormatsPath).futureValue
 
@@ -615,6 +634,10 @@ object GiftAidValidationServiceSpec {
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-GoodData.ods").toURI.toURL.toString
   val giftAidGoodDataWithMultipleSpacesPath: String =
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-GoodDataWithMultipleSpaces.ods").toURI.toURL.toString
+  val giftAidDateDisplayFormatsPath: String =
+    new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-DateDisplayFormats.ods").toURI.toURL.toString
+  val giftAidLastCenturyDatePath: String =
+    new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-LastCenturyDate.ods").toURI.toURL.toString
   val giftAidAmountDisplayFormatsPath: String =
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-AmountDisplayFormats.ods").toURI.toURL.toString
   val giftAidSubPennyAmountPath: String =
