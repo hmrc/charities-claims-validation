@@ -25,6 +25,8 @@ import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.*
 import java.math.RoundingMode
 import java.net.URI
 import java.nio.file.Paths
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.zip.{ZipFile, ZipInputStream}
 import javax.xml.parsers.DocumentBuilderFactory
 import scala.util.Try
@@ -144,6 +146,8 @@ object OdsReaderService:
     format match {
       case CellFormat.Money =>
         roundedToPence(cell.getAttribute("office:value")).getOrElse(extractCellText(cell))
+      case CellFormat.Date =>
+        storedDate(cell.getAttribute("office:date-value")).getOrElse(extractCellText(cell))
       case CellFormat.Text =>
         extractCellText(cell)
     }
@@ -154,6 +158,13 @@ object OdsReaderService:
     Try(BigDecimal(storedValue)).toOption
       .filter(value => value.precision - value.scale <= maxIntegerDigits)
       .map(_.bigDecimal.setScale(2, RoundingMode.HALF_EVEN).toPlainString)
+
+  private val isoDateLength      = 10
+  private val scheduleDateFormat = DateTimeFormatter.ofPattern("dd/MM/uuuu")
+
+  private def storedDate(storedValue: String): Option[String] =
+    Try(LocalDate.parse(storedValue.take(isoDateLength))).toOption
+      .map(_.format(scheduleDateFormat))
 
   private def extractCellText(cell: Element): String = {
     val paragraphs = cell.getElementsByTagName("text:p")

@@ -36,7 +36,7 @@ object OtherIncomeRow {
   def layout: SheetLayout = SheetLayout(
     rowRange = 24 until 225,
     cellRange = 1 until 7,
-    columnFormats = Map(3 -> CellFormat.Money, 4 -> CellFormat.Money)
+    columnFormats = Map(2 -> CellFormat.Date, 3 -> CellFormat.Money, 4 -> CellFormat.Money)
   )
 }
 
@@ -71,14 +71,14 @@ final case class GiftAidDonationRow(
 object GiftAidDonationRow {
   implicit val format: OFormat[GiftAidDonationRow] = Json.format[GiftAidDonationRow]
 
-  val EARLIEST_DONATION_DATE_FIELD: SheetCell = SheetCell(12, 3)
+  val EARLIEST_DONATION_DATE_FIELD: SheetCell = SheetCell(12, 3, CellFormat.Date)
 
   val PREVIOUSLY_OVERCLAIMED_AMOUNT_FIELD: SheetCell = SheetCell(16, 3, CellFormat.Money)
 
   def layout: SheetLayout = SheetLayout(
     rowRange = 24 until 1025,
     cellRange = 1 until 12,
-    columnFormats = Map(9 -> CellFormat.Money)
+    columnFormats = Map(8 -> CellFormat.Date, 9 -> CellFormat.Money)
   )
 }
 
@@ -104,7 +104,7 @@ object CommunityBuildingRow {
 }
 
 enum CellFormat:
-  case Text, Money
+  case Text, Money, Date
 
 final case class SheetLayout(rowRange: Range, cellRange: Range, columnFormats: Map[Int, CellFormat] = Map.empty)
 final case class SheetCell(rowIndex: Int, cellIndex: Int, format: CellFormat = CellFormat.Text)
