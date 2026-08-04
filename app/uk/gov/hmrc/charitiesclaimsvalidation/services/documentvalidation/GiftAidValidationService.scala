@@ -442,6 +442,8 @@ object GiftAidValidationService {
     } else None.validNel
   }
 
+  private val sponsoredEventYesValues = Set("yes", "iawn")
+
   private def validateSponsoredEvent(
     raw: String,
     index: Int,
@@ -452,7 +454,7 @@ object GiftAidValidationService {
     if (!isAggregated) {
       if (input.isEmpty) {
         false.validNel
-      } else if (input == "yes") {
+      } else if (sponsoredEventYesValues.contains(input)) {
         true.validNel
       } else {
         invalid(
