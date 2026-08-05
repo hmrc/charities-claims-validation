@@ -32,37 +32,6 @@ import play.api.Logging
 import scala.concurrent.Future
 import scala.util.Try
 
-/*
-validationService.giftAid.message.1 = Enter details for at least one Gift Aid donation
-validationService.giftAid.message.2 = Enter the earliest donation date
-validationService.giftAid.message.3 = Enter the earliest donation date in the correct format
-validationService.giftAid.message.4 = Enter a previously overclaimed amount in the correct format
-validationService.giftAid.message.5 = Enter an aggregated donations entry in the correct format
-validationService.giftAid.message.6 = There is an issue with this item number
-validationService.giftAid.message.7 = Enter a donation date
-validationService.giftAid.message.8 = Enter a donation date in the correct format
-validationService.giftAid.message.9 = Gift Aid donation date cannot be in the future
-validationService.giftAid.message.10 = Enter a donation amount in the correct format
-validationService.giftAid.message.11 = Donation amount is missing
-validationService.giftAid.message.12 = Enter an aggregated donation amount that is £1000 or smaller
-validationService.giftAid.message.13 = Enter a donor title in the correct format
-validationService.giftAid.message.14 = Enter a donor first name
-validationService.giftAid.message.15 = Enter a donor last name
-validationService.giftAid.message.16 = Enter a donor first name in the correct format
-validationService.giftAid.message.17 = Enter a donor last name in the correct format
-validationService.giftAid.message.18 = Enter a donor house name or number
-validationService.giftAid.message.19 = Enter a donor house name or number in the correct format
-validationService.giftAid.message.20 = Enter a donor postcode
-validationService.giftAid.message.21 = Enter a donor postcode in the correct format
-validationService.giftAid.message.22 = Enter ‘Yes’ if this is a sponsored event, otherwise leave blank
-validationService.giftAid.message.23 = The selected field must be an aggregated donation, sponsored event or ordinary donation
-validationService.giftAid.message.24 = You cannot provide a title for an aggregated donation
-validationService.giftAid.message.25 = You cannot provide a first name for an aggregated donation
-validationService.giftAid.message.26 = You cannot provide a last name for an aggregated donation
-validationService.giftAid.message.27 = You cannot provide a house name or number for an aggregated donation
-validationService.giftAid.message.28 = You cannot provide a postcode for an aggregated donation
- */
-
 @Singleton()
 class GiftAidValidationService @Inject() ()(using ioRuntime: IORuntime) extends Logging {
 

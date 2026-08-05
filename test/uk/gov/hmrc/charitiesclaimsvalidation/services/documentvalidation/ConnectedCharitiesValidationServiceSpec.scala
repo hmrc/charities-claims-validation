@@ -24,17 +24,6 @@ import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.Connect
 import uk.gov.hmrc.charitiesclaimsvalidation.util.BaseSpec
 import cats.effect.unsafe.implicits.global
 
-// #validationService messages
-// validationService.connectedCharities.message.1 = Enter details for a Connected Charity
-// validationService.connectedCharities.message.2 = There is an issue with this item number
-// validationService.connectedCharities.message.3 = Enter a charity name
-// validationService.connectedCharities.message.4 = Enter a charity name in the correct format
-// validationService.connectedCharities.message.5 = Enter a HMRC charities reference number
-// validationService.connectedCharities.message.6 = Enter a HMRC charities reference number in the correct format
-// validationService.commonFile.message.1 = The selected file could not be uploaded
-// validationService.commonFile.message.2 = There is a problem with your spreadsheet
-// validationService.commonFile.message.3 = The selected file must use the template required
-
 class ConnectedCharitiesValidationServiceSpec extends BaseSpec {
 
   val expectedResultForMultipleSpacesAndNewLines = ConnectedCharitiesData(charities =

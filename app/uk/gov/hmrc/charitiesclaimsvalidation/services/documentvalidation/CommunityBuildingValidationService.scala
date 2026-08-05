@@ -27,33 +27,12 @@ import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.CommunityBuilding
 import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
 
 import java.io.FileNotFoundException
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
+
 import scala.concurrent.Future
 import scala.util.Try
-
-//#validationService messages
-//  validationService.communityBuildings.message.1 = Enter details for a Community Building item
-//  validationService.communityBuildings.message.2 = There is an issue with this item number
-//  validationService.communityBuildings.message.3 = Enter a building name
-//  validationService.communityBuildings.message.4 = Enter a building name in the correct format
-//  validationService.communityBuildings.message.5 = Enter a first line of address
-//  validationService.communityBuildings.message.6 = Enter a first line of address in the correct format
-//  validationService.communityBuildings.message.7 = Enter a postcode
-//  validationService.communityBuildings.message.8 = Enter a postcode in the correct format
-//  validationService.communityBuildings.message.9 = Enter a first tax year end date
-//  validationService.communityBuildings.message.10 = Enter a second tax year end date
-//  validationService.communityBuildings.message.11 = Enter a first tax year end date in the correct format
-//  validationService.communityBuildings.message.12 = Enter a second tax year end date in the correct format
-//  validationService.communityBuildings.message.14 = Community Buildings claim tax year must be this year or earlier
-//  validationService.communityBuildings.message.15 = Community Buildings claim tax year cannot be earlier than {0}
-//  validationService.communityBuildings.message.16 = Enter a first tax year amount
-//  validationService.communityBuildings.message.17 = Enter a second tax year amount
-//  validationService.communityBuildings.message.18 = Enter a first tax year amount in the correct format
-//  validationService.communityBuildings.message.19 = Enter a second tax year amount in the correct format
-//  validationService.communityBuildings.message.20 = Donations claimed for more than one tax year in a community building must be different to other tax years
-//  validationService.communityBuildings.message.21 = Community Buildings can be claimed once per tax year per community building, up to a maximum of 3 years
 
 @Singleton()
 class CommunityBuildingValidationService @Inject() ()(using ioRuntime: IORuntime) extends Logging {
@@ -264,12 +243,6 @@ object CommunityBuildingValidationService {
       val earliestYear   = currentTaxYear - 3
 
       val errs: List[ValidationError] = List(
-//        Option.when(year < GASDS_Min_Year)(
-//          ValidationError(
-//            field,
-//            s"validationService.communityBuildings.message.13"
-//          )
-//        ),
         Option.when(year > currentTaxYear)(
           ValidationError(
             field,
@@ -489,7 +462,7 @@ object CommunityBuildingValidationService {
   }
 
   private def getCurrentTaxYear(today: LocalDate): Int =
-    if today.isAfter(LocalDate.of(today.getYear, 4, 5)) then today.getYear + 1 else today.getYear
+    if LocalDateTime.now().isAfter(LocalDateTime.of(today.getYear, 4, 6, 0, 0, 0, 0)) then today.getYear + 1 else today.getYear
 
   private def invalid(field: String, msg: String): V[Nothing] =
     ValidationError(field, msg).invalidNel

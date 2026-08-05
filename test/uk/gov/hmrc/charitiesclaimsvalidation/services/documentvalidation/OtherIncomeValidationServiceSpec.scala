@@ -25,22 +25,6 @@ import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.OtherIncomeRow
 import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.OtherIncomeValidationService.OtherRowWithIndex
 import java.time.LocalDate
 
-/*
-validationService.otherIncome.message.1 = Enter details for an Other Income item
-validationService.otherIncome.message.2 = Enter an overclaimed amount in the correct format
-validationService.otherIncome.message.3 = Tax deducted must be less than gross payment
-validationService.otherIncome.message.4 = There is an issue with this item number
-validationService.otherIncome.message.5 = Enter a name of payer
-validationService.otherIncome.message.6 = Enter a name of payer in the correct format
-validationService.otherIncome.message.7 = Enter an income date
-validationService.otherIncome.message.8 = Enter income date in the correct format
-validationService.otherIncome.message.9 = Other income date of payment cannot be in the future
-validationService.otherIncome.message.10 = Enter a gross payment amount
-validationService.otherIncome.message.11 = Enter the tax deduction amount
-validationService.otherIncome.message.12 = Enter a gross payment amount in the correct format
-validationService.otherIncome.message.13 = Enter the tax deduction amount in the correct format
- */
-
 class OtherIncomeValidationServiceSpec extends BaseSpec with TableDrivenPropertyChecks {
 
   val expectedResultForMultipleSpacesAndNewLines = Some(
