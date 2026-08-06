@@ -107,15 +107,16 @@ class GiftAidValidationService @Inject() ()(using ioRuntime: IORuntime) extends 
     overclaimedCell: String
   ): (List[ValidationError], Option[GiftAidScheduleData]) = {
 
-    val (rowErrors, validatedRows) = processRows(rows)
+    val (rowErrors, donations) = processRows(rows)
 
-    val totalDonations = Option.when(validatedRows.nonEmpty)(validatedRows.map(_.donationAmount).sum)
+    val donationAmounts = donations.flatMap(_.donationAmount)
+    val totalDonations  = Option.when(donationAmounts.nonEmpty)(donationAmounts.sum)
 
     val earliestResult    = GiftAidValidationService.validateEarliestDonationDate(earliestCell)
     val overclaimedResult = GiftAidValidationService.validatePreviouslyOverclaimedAmount(overclaimedCell)
 
     val allErrors      = earliestResult.left.toOption.toList ++ overclaimedResult.left.toOption.toList ++ rowErrors
-    val hasGiftAidData = validatedRows.nonEmpty || earliestResult.isRight || overclaimedResult.isRight
+    val hasGiftAidData = donations.nonEmpty || earliestResult.isRight || overclaimedResult.isRight
 
     val giftAidScheduleData =
       Option.when(hasGiftAidData) {
@@ -123,7 +124,7 @@ class GiftAidValidationService @Inject() ()(using ioRuntime: IORuntime) extends 
           earliestResult.toOption.flatten,
           overclaimedResult.toOption.flatten,
           totalDonations,
-          validatedRows
+          donations
         )
       }
 
@@ -151,36 +152,56 @@ object GiftAidValidationService {
     inputRows: List[GiftAidDonationRowWithIndex]
   ): (List[ValidationError], List[GiftAidDonation]) = {
 
-    val validated: List[V[GiftAidDonation]] = inputRows.map(validateRow)
+    val validated = inputRows.map(validateRow)
 
-    val errors    = validated.collect { case Validated.Invalid(errs) => errs.toList }.flatten
-    val validRows = validated.collect { case Validated.Valid(row) => row }
-
-    (errors, validRows)
+    (validated.flatMap(_._1), validated.map(_._2))
   }
 
-  private def validateRow(giftAidDonationRowWithIndex: GiftAidDonationRowWithIndex): V[GiftAidDonation] = {
+  private def validateRow(giftAidDonationRowWithIndex: GiftAidDonationRowWithIndex): (List[ValidationError], GiftAidDonation) = {
     import giftAidDonationRowWithIndex.{index, row}
 
-    val itemV                   = validateItem(row.donationItem, index)
-    val isAggregated            = DonationType.fromRow(row).isAggregated
-    val aggregateDonationRulesV = validateAggregateDonationRules(row, index)
+    val isAggregated = DonationType.fromRow(row).isAggregated
 
-    (
+    val itemV                   = validateItem(row.donationItem, index)
+    val aggregateDonationRulesV = validateAggregateDonationRules(row, index)
+    val titleV                  = validateTitle(row.donorTitle, index, isAggregated)
+    val firstNameV              = validateName(row.donorFirstName, "First name", s"donorFirstName[$index]", isAggregated)
+    val lastNameV               = validateName(row.donorLastName, "Last name", s"donorLastName[$index]", isAggregated)
+    val houseV                  = validateHouseName(row.donorHouse, index, isAggregated)
+    val postcodeV               = validatePostcode(row.donorPostcode, index, isAggregated)
+    val aggregatedDonationsV    = validateAggregateDonations(row.aggregatedDonations, index)
+    val sponsoredEventV         = validateSponsoredEvent(row.sponsoredEvent, index, isAggregated)
+    val dateV                   = validateDate(row.donationDate, index, LocalDate.now)
+    val amountV                 = validateMoney(row.donationAmount, index, isAggregated)
+
+    val errors = List[V[Any]](
       itemV,
       aggregateDonationRulesV,
-      validateTitle(row.donorTitle, index, isAggregated),
-      validateName(row.donorFirstName, "First name", s"donorFirstName[$index]", isAggregated),
-      validateName(row.donorLastName, "Last name", s"donorLastName[$index]", isAggregated),
-      validateHouseName(row.donorHouse, index, isAggregated),
-      validatePostcode(row.donorPostcode, index, isAggregated),
-      validateAggregateDonations(row.aggregatedDonations, index),
-      validateSponsoredEvent(row.sponsoredEvent, index, isAggregated),
-      validateDate(row.donationDate, index, LocalDate.now),
-      validateMoney(row.donationAmount, index, isAggregated)
-    ).mapN { (item, _, title, firstName, lastName, house, postCode, aggDonations, sponsored, date, amount) =>
-      GiftAidDonation(item, title, firstName, lastName, house, postCode, aggDonations, sponsored, date, amount)
-    }
+      titleV,
+      firstNameV,
+      lastNameV,
+      houseV,
+      postcodeV,
+      aggregatedDonationsV,
+      sponsoredEventV,
+      dateV,
+      amountV
+    ).collect { case Validated.Invalid(errs) => errs.toList }.flatten
+
+    val donation = GiftAidDonation(
+      itemV.toOption,
+      titleV.toOption.flatten,
+      firstNameV.toOption.flatten,
+      lastNameV.toOption.flatten,
+      houseV.toOption.flatten,
+      postcodeV.toOption.flatten,
+      aggregatedDonationsV.toOption.flatten,
+      sponsoredEventV.toOption,
+      dateV.toOption,
+      amountV.toOption
+    )
+
+    (errors, donation)
   }
 
   private def validateEarliestDonationDate(earliestDonationDateCell: String): Either[ValidationError, Option[LocalDate]] = {

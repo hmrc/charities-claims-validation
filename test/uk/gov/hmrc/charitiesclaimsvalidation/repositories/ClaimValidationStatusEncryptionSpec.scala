@@ -70,16 +70,16 @@ class ClaimValidationStatusEncryptionSpec
         totalDonations = Some(BigDecimal(100)),
         donations = List(
           GiftAidDonation(
-            donationItem = 1,
+            donationItem = Some(1),
             donorTitle = Some("Ms"),
             donorFirstName = Some("Alice"),
             donorLastName = Some(donorLastName),
             donorHouse = Some("221B"),
             donorPostcode = Some(donorPostcode),
             aggregatedDonations = None,
-            sponsoredEvent = false,
-            donationDate = LocalDate.parse("2024-05-01"),
-            donationAmount = BigDecimal(100)
+            sponsoredEvent = Some(false),
+            donationDate = Some(LocalDate.parse("2024-05-01")),
+            donationAmount = Some(BigDecimal(100))
           )
         )
       )

@@ -101,10 +101,10 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
       errorResult shouldBe empty
       validResult.value.donations.map(_.donationDate) shouldBe List(
-        LocalDate.of(1999, 3, 24),
-        LocalDate.of(2015, 6, 24),
-        LocalDate.of(2015, 3, 31),
-        LocalDate.of(2015, 4, 26)
+        Some(LocalDate.of(1999, 3, 24)),
+        Some(LocalDate.of(2015, 6, 24)),
+        Some(LocalDate.of(2015, 3, 31)),
+        Some(LocalDate.of(2015, 4, 26))
       )
     }
 
@@ -127,10 +127,10 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
       errorResult shouldBe empty
       validResult.value.donations.map(_.donationAmount) shouldBe List(
-        BigDecimal("240.57"),
-        BigDecimal("250.00"),
-        BigDecimal("880.00"),
-        BigDecimal("80.00")
+        Some(BigDecimal("240.57")),
+        Some(BigDecimal("250.00")),
+        Some(BigDecimal("880.00")),
+        Some(BigDecimal("80.00"))
       )
       validResult.value.totalDonations shouldBe Some(BigDecimal("1450.57"))
     }
@@ -139,14 +139,59 @@ class GiftAidValidationServiceSpec extends BaseSpec {
       val (errorResult, validResult) = new GiftAidValidationService().validate(earliestDonationDateBadDataPath).futureValue
 
       errorResult shouldBe BadEarliestDateOverClaimAmount
-      validResult.value shouldBe validRowsNoEarliestDonationDate
+      validResult.value shouldBe validDataNoEarliestDonationDate
     }
 
-    "return a list of invalid rows given spreadsheet with invalid data" in {
+    "return every parsed row, with the fields that failed validation left empty, given spreadsheet with invalid data" in {
       val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidBadDataPath).futureValue
 
       errorResult shouldBe BadDataValidationErrors
-      validResult shouldBe None
+      validResult.value.donations should have size 26
+
+      validResult.value.donations.head shouldBe GiftAidDonation(
+        Some(1),
+        Some("Mr"),
+        None,
+        Some("missingfirstname"),
+        Some("1"),
+        Some("AB12 3YZ"),
+        None,
+        Some(false),
+        Some(LocalDate.of(2017, 11, 11)),
+        Some(1000.00)
+      )
+
+      validResult.value.donations(22) shouldBe GiftAidDonation(
+        None,
+        Some("Prof"),
+        Some("Henry"),
+        Some("House Martin"),
+        Some("152A"),
+        Some("M99 2QD"),
+        None,
+        Some(false),
+        Some(LocalDate.of(2015, 3, 24)),
+        Some(240.00)
+      )
+    }
+
+    "index each error to the position of its donation in the returned list" in {
+      val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidBadDataPath).futureValue
+
+      val donations = validResult.value.donations
+
+      errorResult.foreach {
+        case ValidationError(s"item[$index]", _)           => donations(index.toInt).donationItem shouldBe None
+        case ValidationError(s"donorTitle[$index]", _)     => donations(index.toInt).donorTitle shouldBe None
+        case ValidationError(s"donorFirstName[$index]", _) => donations(index.toInt).donorFirstName shouldBe None
+        case ValidationError(s"donorLastName[$index]", _)  => donations(index.toInt).donorLastName shouldBe None
+        case ValidationError(s"donorHouse[$index]", _)     => donations(index.toInt).donorHouse shouldBe None
+        case ValidationError(s"postcode[$index]", _)       => donations(index.toInt).donorPostcode shouldBe None
+        case ValidationError(s"sponsoredEvent[$index]", _) => donations(index.toInt).sponsoredEvent shouldBe None
+        case ValidationError(s"donationDate[$index]", _)   => donations(index.toInt).donationDate shouldBe None
+        case ValidationError(s"donationAmount[$index]", _) => donations(index.toInt).donationAmount shouldBe None
+        case _                                             => succeed
+      }
     }
 
     "return no errors and no valid rows when spreadsheet is empty" in {
@@ -185,7 +230,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
       "return no errors when item is between 1 and 1000" in {
         List("1", "1000", " 5 ").foreach { item =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(
                 0,
@@ -195,13 +240,13 @@ class GiftAidValidationServiceSpec extends BaseSpec {
           )
 
           errorRows shouldBe empty
-          validRows should have size 1
+          donationRows should have size 1
         }
       }
 
       "return a validation error when item is out of range, non-numeric, or padded with zeros" in {
         List("0", "1234", "01", "abc", "").foreach { item =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(
                 0,
@@ -211,7 +256,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
           )
 
           errorRows should contain(itemError)
-          validRows shouldBe empty
+          donationRows.map(_.donationItem) shouldBe List(None)
         }
       }
     }
@@ -226,27 +271,27 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
       "return no errors when title is valid" in {
         List("Mr", "Prof", "Ms", "Miss").foreach { title =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", title, "Henry", "House Martin", "152A", "M99 2QD", "", "", "24/06/15", "240.00"))
             )
           )
 
           errorRows shouldBe empty
-          validRows should have size 1
+          donationRows should have size 1
         }
       }
 
       "return a validation error when the title is not in valid format" in {
         List("123", "Mister", "Mr.").foreach { title =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", title, "Henry", "House Martin", "152A", "M99 2QD", "", "", "24/06/15", "240.00"))
             )
           )
 
           errorRows should contain(titleInvalidError)
-          validRows shouldBe empty
+          donationRows.map(_.donorTitle) shouldBe List(None)
         }
       }
     }
@@ -261,19 +306,19 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
       "return no errors when name is valid" in {
         List("Test123", "O'Test", "Company_Name", "12345678901234567890123456789012345").foreach { name =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", name, "House Martin", "152A", "M99 2QD", "", "", "24/06/15", "240.00"))
             )
           )
 
           errorRows shouldBe empty
-          validRows should have size 1
+          donationRows should have size 1
         }
       }
 
       "return a valid row when the firstname is valid, even if it contains multiple spaces, after normalising the spacing" in {
-        val (errorRows, validRows) = GiftAidValidationService.validateRows(
+        val (errorRows, donationRows) = GiftAidValidationService.validateRows(
           List(
             GiftAidDonationRowWithIndex(
               0,
@@ -283,24 +328,24 @@ class GiftAidValidationServiceSpec extends BaseSpec {
         )
 
         errorRows shouldBe empty
-        validRows shouldBe List(
+        donationRows shouldBe List(
           GiftAidDonation(
-            1,
+            Some(1),
             Some("Prof"),
             Some("Henry Spaces 1"),
             Some("House Martin"),
             Some("152A"),
             Some("M99 2QD"),
             None,
-            false,
-            LocalDate.of(2015, 6, 24),
-            240.00
+            Some(false),
+            Some(LocalDate.of(2015, 6, 24)),
+            Some(240.00)
           )
         )
       }
 
       "return a valid row when the lastname is valid, even if it contains multiple spaces, after normalising the spacing" in {
-        val (errorRows, validRows) = GiftAidValidationService.validateRows(
+        val (errorRows, donationRows) = GiftAidValidationService.validateRows(
           List(
             GiftAidDonationRowWithIndex(
               0,
@@ -310,32 +355,32 @@ class GiftAidValidationServiceSpec extends BaseSpec {
         )
 
         errorRows shouldBe empty
-        validRows shouldBe List(
+        donationRows shouldBe List(
           GiftAidDonation(
-            1,
+            Some(1),
             Some("Prof"),
             Some("Henry"),
             Some("House Martin spaces"),
             Some("152A"),
             Some("M99 2QD"),
             None,
-            false,
-            LocalDate.of(2015, 6, 24),
-            240.00
+            Some(false),
+            Some(LocalDate.of(2015, 6, 24)),
+            Some(240.00)
           )
         )
       }
 
       "return a validation error when the name is not in valid format" in {
         List("name is longer than thirty five characters").foreach { name =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", name, "House Martin", "152A", "M99 2QD", "", "", "24/06/15", "240.00"))
             )
           )
 
           errorRows should contain(nameInvalidError)
-          validRows shouldBe empty
+          donationRows.map(_.donorFirstName) shouldBe List(None)
         }
       }
 
@@ -349,14 +394,14 @@ class GiftAidValidationServiceSpec extends BaseSpec {
           "\u2018 \u2019" // smart quotes around a space
         )
         blankInputs.foreach { name =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", name, "House Martin", "152A", "M99 2QD", "", "", "24/06/15", "240.00"))
             )
           )
 
           errorRows should contain(ValidationError("donorFirstName[0]", "validationService.giftAid.message.14"))
-          validRows shouldBe empty
+          donationRows.map(_.donorFirstName) shouldBe List(None)
         }
       }
     }
@@ -371,19 +416,19 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
       "return no errors when house name is valid" in {
         List("12 A", "221B Baker Street", "No. 45").foreach { house =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", house, "M99 2QD", "", "", "24/06/15", "240.00"))
             )
           )
 
           errorRows shouldBe empty
-          validRows should have size 1
+          donationRows should have size 1
         }
       }
 
       "return a valid row when the house is valid, even if it contains multiple spaces, after normalising the spacing" in {
-        val (errorRows, validRows) = GiftAidValidationService.validateRows(
+        val (errorRows, donationRows) = GiftAidValidationService.validateRows(
           List(
             GiftAidDonationRowWithIndex(
               0,
@@ -393,32 +438,32 @@ class GiftAidValidationServiceSpec extends BaseSpec {
         )
 
         errorRows shouldBe empty
-        validRows shouldBe List(
+        donationRows shouldBe List(
           GiftAidDonation(
-            1,
+            Some(1),
             Some("Prof"),
             Some("Henry"),
             Some("House Martin"),
             Some("152A house no"),
             Some("M99 2QD"),
             None,
-            false,
-            LocalDate.of(2015, 6, 24),
-            240.00
+            Some(false),
+            Some(LocalDate.of(2015, 6, 24)),
+            Some(240.00)
           )
         )
       }
 
       "return a validation error when the house name is not in valid format" in {
         List("house name is longer than forty characters").foreach { house =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", house, "M99 2QD", "", "", "24/06/15", "240.00"))
             )
           )
 
           errorRows should contain(houseNameInvalidError)
-          validRows shouldBe empty
+          donationRows.map(_.donorHouse) shouldBe List(None)
         }
       }
     }
@@ -433,27 +478,27 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
       "return no errors when postcode is valid or X" in {
         List("X", "EC1A 1BB", "W1O 7HG", "SW1A 1AA", "GIR 0AA", "SWA 1AA", "M99        2QD", "GIR      0AA").foreach { postcode =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", postcode, "", "", "24/06/15", "240.00"))
             )
           )
 
           errorRows shouldBe empty
-          validRows should have size 1
+          donationRows should have size 1
         }
       }
 
       "return a validation error when the postcode is not in valid format" in {
         List("12345", "SW1 1A", "ABCDE", "EC1A 1A1", "NE270QQ", "x").foreach { postcode =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", postcode, "", "", "24/06/15", "240.00"))
             )
           )
 
           errorRows should contain(postCodeInvalidError)
-          validRows shouldBe empty
+          donationRows.map(_.donorPostcode) shouldBe List(None)
         }
       }
     }
@@ -468,7 +513,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
       "return no errors when sponsored event is valid" in {
         List("yes", "Yes", "YES", "iawn", "Iawn", "IAWN", " iawn ", "").foreach { event =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(
                 0,
@@ -478,13 +523,13 @@ class GiftAidValidationServiceSpec extends BaseSpec {
           )
 
           errorRows shouldBe empty
-          validRows should have size 1
+          donationRows should have size 1
         }
       }
 
       "mark the donation as a sponsored event when the Welsh value is used" in {
         List("yes", "iawn").foreach { event =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(
                 0,
@@ -495,14 +540,14 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
           withClue(s"$event: ") {
             errorRows shouldBe empty
-            validRows.map(_.sponsoredEvent) shouldBe List(true)
+            donationRows.map(_.sponsoredEvent) shouldBe List(Some(true))
           }
         }
       }
 
       "return a validation error when the sponsored event is not in valid format" in {
         List("No", "no", "False", "1", "na", "ie", "iaw", "iawnn").foreach { event =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(
                 0,
@@ -512,7 +557,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
           )
 
           errorRows should contain(sponsoredEventInvalidError)
-          validRows shouldBe empty
+          donationRows.map(_.sponsoredEvent) shouldBe List(None)
         }
       }
     }
@@ -532,40 +577,40 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
       "return no errors when amount is valid for all donation types" in {
         List("0.01", "9999999999999.99", "1,000.00").foreach { amount =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", "M99 2QD", "", "", "24/06/15", amount))
             )
           )
 
           errorRows shouldBe empty
-          validRows should have size 1
+          donationRows should have size 1
         }
       }
 
       "return a validation error when the amount is not in valid format" in {
         List("abc", "£10.00", "10.000", "--10.00", "100000000000000.00", "99999999999999.99", "-1.00").foreach { amount =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", "M99 2QD", "", "", "24/06/15", amount))
             )
           )
 
           errorRows should contain(amountInvalidError)
-          validRows shouldBe empty
+          donationRows.map(_.donationAmount) shouldBe List(None)
         }
       }
 
       "return a validation error when the amount is more than 1000 for aggregated donation type" in {
         List("1000.01", "9999.99").foreach { amount =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "", "", "", "", "", "Yes", "", "24/06/15", amount))
             )
           )
 
           errorRows should contain(aggregationAmountInvalidError)
-          validRows shouldBe empty
+          donationRows.map(_.donationAmount) shouldBe List(None)
         }
       }
     }
@@ -586,46 +631,46 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
       "return no errors when donation date is valid" in {
         List("31/12/25", "29/02/24", "11/01/26", "28/02/25", "12/01/2026").foreach { date =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", "M99 2QD", "", "", date, "240.00"))
             )
           )
 
           errorRows shouldBe empty
-          validRows should have size 1
+          donationRows should have size 1
         }
       }
 
       "return a validation error when the donation date is not in valid format" in {
         List("2026-01-12", "12-01-26", "30/02/25", "29/02/25", "30/02/2025", "29/02/2025", "1/1/2026").foreach { date =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", "M99 2QD", "", "", date, "240.00"))
             )
           )
 
           errorRows should contain(dateInvalidError)
-          validRows shouldBe empty
+          donationRows.map(_.donationDate) shouldBe List(None)
         }
       }
 
       "return a validation error when the donation date is in future" in {
         val tomorrow = LocalDate.now().plusDays(1)
         List("dd/MM/uu", "dd/MM/uuuu").map(pattern => tomorrow.format(DateTimeFormatter.ofPattern(pattern))).foreach { date =>
-          val (errorRows, validRows) = GiftAidValidationService.validateRows(
+          val (errorRows, donationRows) = GiftAidValidationService.validateRows(
             List(
               GiftAidDonationRowWithIndex(0, GiftAidDonationRow("1", "Prof", "Henry", "House Martin", "152A", "M99 2QD", "", "", date, "240.00"))
             )
           )
 
           errorRows should contain(dateInFutureError)
-          validRows shouldBe empty
+          donationRows.map(_.donationDate) shouldBe List(None)
         }
       }
 
       "checking fields that remove non western characters in the AS IS replicate behaviour" in {
-        val (errorRows, validRows) = GiftAidValidationService.validateRows(
+        val (errorRows, donationRows) = GiftAidValidationService.validateRows(
           List(
             GiftAidDonationRowWithIndex(
               0,
@@ -635,11 +680,11 @@ class GiftAidValidationServiceSpec extends BaseSpec {
         )
 
         errorRows should have size 0
-        validRows should have size 1
+        donationRows should have size 1
       }
 
       "checking fields that remove non western characters in the AS IS replicate behaviour (aggregated donation field)" in {
-        val (errorRows, validRows) = GiftAidValidationService.validateRows(
+        val (errorRows, donationRows) = GiftAidValidationService.validateRows(
           List(
             GiftAidDonationRowWithIndex(
               0,
@@ -649,7 +694,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
         )
 
         errorRows should have size 0
-        validRows should have size 1
+        donationRows should have size 1
       }
     }
   }
@@ -687,31 +732,53 @@ object GiftAidValidationServiceSpec {
     Some(1450.00),
     List(
       GiftAidDonation(
-        1,
+        Some(1),
         Some("Prof"),
         Some("Henry"),
         Some("House Martin"),
         Some("152A"),
         Some("M99 2QD"),
         None,
-        false,
-        LocalDate.of(2015, 3, 24),
-        240.00
+        Some(false),
+        Some(LocalDate.of(2015, 3, 24)),
+        Some(240.00)
       ),
       GiftAidDonation(
-        2,
+        Some(2),
         Some("Mr"),
         Some("John"),
         Some("Smith"),
         Some("100 Champs Elysees, Paris"),
         Some("X"),
         None,
-        false,
-        LocalDate.of(2015, 6, 24),
-        250.00
+        Some(false),
+        Some(LocalDate.of(2015, 6, 24)),
+        Some(250.00)
       ),
-      GiftAidDonation(3, None, None, None, None, None, Some("One off Gift Aid donations"), false, LocalDate.of(2015, 3, 31), 880.00),
-      GiftAidDonation(4, Some("Miss"), Some("B"), Some("Chaudry"), Some("21"), Some("L43 4FB"), None, true, LocalDate.of(2015, 4, 26), 80.00)
+      GiftAidDonation(
+        Some(3),
+        None,
+        None,
+        None,
+        None,
+        None,
+        Some("One off Gift Aid donations"),
+        Some(false),
+        Some(LocalDate.of(2015, 3, 31)),
+        Some(880.00)
+      ),
+      GiftAidDonation(
+        Some(4),
+        Some("Miss"),
+        Some("B"),
+        Some("Chaudry"),
+        Some("21"),
+        Some("L43 4FB"),
+        None,
+        Some(true),
+        Some(LocalDate.of(2015, 4, 26)),
+        Some(80.00)
+      )
     )
   )
 
@@ -721,87 +788,120 @@ object GiftAidValidationServiceSpec {
     Some(1700.00),
     List(
       GiftAidDonation(
-        1,
+        Some(1),
         Some("Prof"),
         Some("Henry Multiple Spaces"),
         Some("House Martin"),
         Some("152A Multiple Spaces"),
         Some("M99 2QD"),
         None,
-        false,
-        LocalDate.of(2015, 3, 24),
-        240.00
+        Some(false),
+        Some(LocalDate.of(2015, 3, 24)),
+        Some(240.00)
       ),
       GiftAidDonation(
-        2,
+        Some(2),
         Some("Mr"),
         Some("John Multiple Spaces"),
         Some("Smith Multiple Spaces"),
         Some("100 Champs Elysees, Paris"),
         Some("X"),
         None,
-        false,
-        LocalDate.of(2015, 6, 24),
-        250.00
-      ),
-      GiftAidDonation(3, None, None, None, None, None, Some("One off Gift Aid donations"), false, LocalDate.of(2015, 3, 31), 880.00),
-      GiftAidDonation(4, Some("Miss"), Some("B"), Some("Chaudry"), Some("21"), Some("L43 4FB"), None, true, LocalDate.of(2015, 4, 26), 80.00),
-      GiftAidDonation(
-        5,
-        Some("Mr"),
-        Some("John"),
-        Some("Smith"),
-        Some("100 Champs Elysees, Paris"),
-        Some("X"),
-        None,
-        false,
-        LocalDate.of(2015, 6, 24),
-        250.00
-      )
-    )
-  )
-
-  val validRowsNoEarliestDonationDate = GiftAidScheduleData(
-    None,
-    None,
-    Some(1450.00),
-    List(
-      GiftAidDonation(
-        1,
-        Some("Prof"),
-        Some("Henry"),
-        Some("House Martin"),
-        Some("152A"),
-        Some("M99 2QD"),
-        None,
-        false,
-        LocalDate.of(2015, 3, 24),
-        240.00
+        Some(false),
+        Some(LocalDate.of(2015, 6, 24)),
+        Some(250.00)
       ),
       GiftAidDonation(
-        2,
-        Some("Mr"),
-        Some("John"),
-        Some("Smith"),
-        Some("100 Champs Elysees, Paris"),
-        Some("X"),
+        Some(3),
         None,
-        false,
-        LocalDate.of(2015, 6, 24),
-        250.00
+        None,
+        None,
+        None,
+        None,
+        Some("One off Gift Aid donations"),
+        Some(false),
+        Some(LocalDate.of(2015, 3, 31)),
+        Some(880.00)
       ),
-      GiftAidDonation(3, None, None, None, None, None, Some("One off Gift Aid donations"), false, LocalDate.of(2015, 3, 31), BigDecimal(880.00)),
       GiftAidDonation(
-        4,
+        Some(4),
         Some("Miss"),
         Some("B"),
         Some("Chaudry"),
         Some("21"),
         Some("L43 4FB"),
         None,
-        true,
-        LocalDate.of(2015, 4, 26),
-        80.00
+        Some(true),
+        Some(LocalDate.of(2015, 4, 26)),
+        Some(80.00)
+      ),
+      GiftAidDonation(
+        Some(5),
+        Some("Mr"),
+        Some("John"),
+        Some("Smith"),
+        Some("100 Champs Elysees, Paris"),
+        Some("X"),
+        None,
+        Some(false),
+        Some(LocalDate.of(2015, 6, 24)),
+        Some(250.00)
+      )
+    )
+  )
+
+  val validDataNoEarliestDonationDate = GiftAidScheduleData(
+    None,
+    None,
+    Some(1450.00),
+    List(
+      GiftAidDonation(
+        Some(1),
+        Some("Prof"),
+        Some("Henry"),
+        Some("House Martin"),
+        Some("152A"),
+        Some("M99 2QD"),
+        None,
+        Some(false),
+        Some(LocalDate.of(2015, 3, 24)),
+        Some(240.00)
+      ),
+      GiftAidDonation(
+        Some(2),
+        Some("Mr"),
+        Some("John"),
+        Some("Smith"),
+        Some("100 Champs Elysees, Paris"),
+        Some("X"),
+        None,
+        Some(false),
+        Some(LocalDate.of(2015, 6, 24)),
+        Some(250.00)
+      ),
+      GiftAidDonation(
+        Some(3),
+        None,
+        None,
+        None,
+        None,
+        None,
+        Some("One off Gift Aid donations"),
+        Some(false),
+        Some(LocalDate.of(2015, 3, 31)),
+        Some(BigDecimal(880.00))
+      ),
+      GiftAidDonation(
+        Some(4),
+        Some("Miss"),
+        Some("B"),
+        Some("Chaudry"),
+        Some("21"),
+        Some("L43 4FB"),
+        None,
+        Some(true),
+        Some(LocalDate.of(2015, 4, 26)),
+        Some(80.00)
       )
     )
   )
