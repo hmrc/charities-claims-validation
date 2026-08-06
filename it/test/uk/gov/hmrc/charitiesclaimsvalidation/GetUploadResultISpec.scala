@@ -182,16 +182,16 @@ class GetUploadResultISpec
       totalDonations = Some(BigDecimal(1450)),
       donations = List(
         GiftAidDonation(
-          donationItem = 1,
+          donationItem = Some(1),
           donorTitle = Some("Mr"),
           donorFirstName = Some("John"),
           donorLastName = Some("Smith"),
           donorHouse = Some("123"),
           donorPostcode = Some("AB1 2CD"),
           aggregatedDonations = None,
-          sponsoredEvent = false,
-          donationDate = java.time.LocalDate.of(2025, 3, 24),
-          donationAmount = BigDecimal(240)
+          sponsoredEvent = Some(false),
+          donationDate = Some(java.time.LocalDate.of(2025, 3, 24)),
+          donationAmount = Some(BigDecimal(240))
         )
       )
     )

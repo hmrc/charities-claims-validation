@@ -29,16 +29,16 @@ class BigDecimalFormattingSpec extends AnyWordSpec with Matchers:
 
     "format whole numbers with two decimal places in GiftAidDonation" in:
       val donation = GiftAidDonation(
-        donationItem = 1,
+        donationItem = Some(1),
         donorTitle = Some("Mr"),
         donorFirstName = Some("John"),
         donorLastName = Some("Doe"),
         donorHouse = Some("123"),
         donorPostcode = Some("AB1 2CD"),
         aggregatedDonations = None,
-        sponsoredEvent = false,
-        donationDate = LocalDate.of(2025, 1, 15),
-        donationAmount = BigDecimal(1450)
+        sponsoredEvent = Some(false),
+        donationDate = Some(LocalDate.of(2025, 1, 15)),
+        donationAmount = Some(BigDecimal(1450))
       )
 
       val json = Json.toJson(donation)
@@ -46,16 +46,16 @@ class BigDecimalFormattingSpec extends AnyWordSpec with Matchers:
 
     "format decimal numbers with two decimal places in GiftAidDonation" in:
       val donation = GiftAidDonation(
-        donationItem = 1,
+        donationItem = Some(1),
         donorTitle = Some("Mr"),
         donorFirstName = Some("John"),
         donorLastName = Some("Doe"),
         donorHouse = Some("123"),
         donorPostcode = Some("AB1 2CD"),
         aggregatedDonations = None,
-        sponsoredEvent = false,
-        donationDate = LocalDate.of(2025, 1, 15),
-        donationAmount = BigDecimal("240.50")
+        sponsoredEvent = Some(false),
+        donationDate = Some(LocalDate.of(2025, 1, 15)),
+        donationAmount = Some(BigDecimal("240.50"))
       )
 
       val json = Json.toJson(donation)

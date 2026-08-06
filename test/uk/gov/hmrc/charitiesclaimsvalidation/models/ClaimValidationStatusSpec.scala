@@ -99,16 +99,16 @@ class ClaimValidationStatusSpec extends AnyWordSpec with Matchers:
             totalDonations = Some(100),
             donations = List(
               GiftAidDonation(
-                donationItem = 1,
+                donationItem = Some(1),
                 donorTitle = Some("Mr"),
                 donorFirstName = Some("John"),
                 donorLastName = Some("Doe"),
                 donorHouse = Some("123"),
                 donorPostcode = Some("AB1 2CD"),
                 aggregatedDonations = None,
-                sponsoredEvent = false,
-                donationDate = LocalDate.of(2025, 1, 15),
-                donationAmount = BigDecimal(100)
+                sponsoredEvent = Some(false),
+                donationDate = Some(LocalDate.of(2025, 1, 15)),
+                donationAmount = Some(BigDecimal(100))
               )
             )
           )

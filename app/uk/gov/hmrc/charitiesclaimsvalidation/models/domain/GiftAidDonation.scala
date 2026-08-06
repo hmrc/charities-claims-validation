@@ -23,16 +23,16 @@ import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.DocumentRow
 import java.time.LocalDate
 
 final case class GiftAidDonation(
-  donationItem: Int,
+  donationItem: Option[Int],
   donorTitle: Option[String],
   donorFirstName: Option[String],
   donorLastName: Option[String],
   donorHouse: Option[String],
   donorPostcode: Option[String],
   aggregatedDonations: Option[String],
-  sponsoredEvent: Boolean,
-  donationDate: LocalDate,
-  donationAmount: BigDecimal
+  sponsoredEvent: Option[Boolean],
+  donationDate: Option[LocalDate],
+  donationAmount: Option[BigDecimal]
 ) extends DocumentRow
 
 object GiftAidDonation {
