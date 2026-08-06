@@ -27,33 +27,12 @@ import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.CommunityBuilding
 import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
 
 import java.io.FileNotFoundException
-import java.time.LocalDate
+import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
+
 import scala.concurrent.Future
 import scala.util.Try
-
-//#validationService messages
-//  validationService.communityBuildings.message.1 = Enter details for a Community Building item
-//  validationService.communityBuildings.message.2 = There is an issue with this item number
-//  validationService.communityBuildings.message.3 = Enter a building name
-//  validationService.communityBuildings.message.4 = Enter a building name in the correct format
-//  validationService.communityBuildings.message.5 = Enter a first line of address
-//  validationService.communityBuildings.message.6 = Enter a first line of address in the correct format
-//  validationService.communityBuildings.message.7 = Enter a postcode
-//  validationService.communityBuildings.message.8 = Enter a postcode in the correct format
-//  validationService.communityBuildings.message.9 = Enter a first tax year end date
-//  validationService.communityBuildings.message.10 = Enter a second tax year end date
-//  validationService.communityBuildings.message.11 = Enter a first tax year end date in the correct format
-//  validationService.communityBuildings.message.12 = Enter a second tax year end date in the correct format
-//  validationService.communityBuildings.message.14 = Community Buildings claim tax year must be this year or earlier
-//  validationService.communityBuildings.message.15 = Community Buildings claim tax year cannot be earlier than {0}
-//  validationService.communityBuildings.message.16 = Enter a first tax year amount
-//  validationService.communityBuildings.message.17 = Enter a second tax year amount
-//  validationService.communityBuildings.message.18 = Enter a first tax year amount in the correct format
-//  validationService.communityBuildings.message.19 = Enter a second tax year amount in the correct format
-//  validationService.communityBuildings.message.20 = Donations claimed for more than one tax year in a community building must be different to other tax years
-//  validationService.communityBuildings.message.21 = Community Buildings can be claimed once per tax year per community building, up to a maximum of 3 years
 
 @Singleton()
 class CommunityBuildingValidationService @Inject() ()(using ioRuntime: IORuntime) extends Logging {
@@ -74,7 +53,7 @@ class CommunityBuildingValidationService @Inject() ()(using ioRuntime: IORuntime
           }
           (rowErrors, validatedBuildingsWithIndex) = CommunityBuildingValidationService.validateRows(
             communityBuildingRowWithIndex,
-            today = LocalDate.now
+            now = LocalDateTime.now()
           )
           crossFieldErrors        = CommunityBuildingValidationService.validateCrossField(validatedBuildingsWithIndex)
           allErrors               = CommunityBuildingValidationService.sortErrorsByField(rowErrors ++ crossFieldErrors)
@@ -118,8 +97,8 @@ object CommunityBuildingValidationService {
       "validationService.communityBuildings.message.1"
     )
 
-  def validateRows(inputRows: List[BuildingRowWithIndex], today: LocalDate): (List[ValidationError], List[ValidatedBuildingWithIndex]) = {
-    val validated: List[V[ValidatedBuildingWithIndex]] = inputRows.map(validateRow(_, today))
+  def validateRows(inputRows: List[BuildingRowWithIndex], now: LocalDateTime): (List[ValidationError], List[ValidatedBuildingWithIndex]) = {
+    val validated: List[V[ValidatedBuildingWithIndex]] = inputRows.map(validateRow(_, now))
 
     val errors = validated.collect { case Validated.Invalid(errs) => errs.toList }.flatten
     val valids = validated.collect { case Validated.Valid(row) => row }
@@ -127,7 +106,7 @@ object CommunityBuildingValidationService {
     (errors, valids)
   }
 
-  private def validateRow(buildingRowWithIndex: BuildingRowWithIndex, today: LocalDate): V[ValidatedBuildingWithIndex] = {
+  private def validateRow(buildingRowWithIndex: BuildingRowWithIndex, now: LocalDateTime): V[ValidatedBuildingWithIndex] = {
     import buildingRowWithIndex.*
 
     val errorIndex = index - CommunityBuildingRow.layout.rowRange.start
@@ -137,10 +116,10 @@ object CommunityBuildingValidationService {
     val addressV  = validateFirstLineOfAddress(row.firstLineOfAddress, errorIndex)
     val postcodeV = validatePostcode(row.postcode, errorIndex)
 
-    val taxYear1V = validateTaxYear(row.taxYear1, "First", errorIndex, today, required = true)
+    val taxYear1V = validateTaxYear(row.taxYear1, "First", errorIndex, now, required = true)
     val amount1V  = validateAmount(row.amount1, "First", errorIndex, required = true)
 
-    val taxYear2ConditionalV = validateTaxYear2Conditional(row.taxYear1, row.taxYear2, row.amount2, errorIndex, today)
+    val taxYear2ConditionalV = validateTaxYear2Conditional(row.taxYear1, row.taxYear2, row.amount2, errorIndex, now)
 
     (itemV, nameV, addressV, postcodeV, taxYear1V, amount1V, taxYear2ConditionalV).mapN { (item, name, address, postcode, year1, amt1, year2Opt) =>
       ValidatedBuildingWithIndex(
@@ -237,7 +216,7 @@ object CommunityBuildingValidationService {
     raw: String,
     label: String,
     index: Int,
-    today: LocalDate,
+    now: LocalDateTime,
     required: Boolean
   ): V[Int] = {
 
@@ -260,16 +239,10 @@ object CommunityBuildingValidationService {
       )
     } else {
       val year           = t.toInt
-      val currentTaxYear = getCurrentTaxYear(today)
+      val currentTaxYear = getCurrentTaxYear(now)
       val earliestYear   = currentTaxYear - 3
 
       val errs: List[ValidationError] = List(
-//        Option.when(year < GASDS_Min_Year)(
-//          ValidationError(
-//            field,
-//            s"validationService.communityBuildings.message.13"
-//          )
-//        ),
         Option.when(year > currentTaxYear)(
           ValidationError(
             field,
@@ -361,7 +334,7 @@ object CommunityBuildingValidationService {
     taxYear2Raw: String,
     amount2Raw: String,
     index: Int,
-    today: LocalDate
+    now: LocalDateTime
   ): V[Option[(Int, BigDecimal)]] = {
     val year2Empty   = taxYear2Raw.trim.isEmpty
     val amount2Empty = amount2Raw.trim.isEmpty
@@ -371,7 +344,7 @@ object CommunityBuildingValidationService {
         None.validNel
 
       case (false, false) =>
-        val year2V   = validateTaxYear(taxYear2Raw, "Second", index, today, required = true)
+        val year2V   = validateTaxYear(taxYear2Raw, "Second", index, now, required = true)
         val amount2V = validateAmount(amount2Raw, "Second", index, required = true)
 
         // Additional validation: taxYear1 and taxYear2 must be different within the same row
@@ -488,8 +461,8 @@ object CommunityBuildingValidationService {
     s"$normName|$normAddress|$normPost"
   }
 
-  private def getCurrentTaxYear(today: LocalDate): Int =
-    if today.isAfter(LocalDate.of(today.getYear, 4, 5)) then today.getYear + 1 else today.getYear
+  private def getCurrentTaxYear(now: LocalDateTime): Int =
+    if now.isAfter(LocalDateTime.of(now.getYear, 4, 6, 0, 0, 0, 0)) then now.getYear + 1 else now.getYear
 
   private def invalid(field: String, msg: String): V[Nothing] =
     ValidationError(field, msg).invalidNel

@@ -31,10 +31,6 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-// validationService.commonFile.message.1 = The selected file could not be uploaded
-// validationService.commonFile.message.2 = There is a problem with your spreadsheet
-// validationService.commonFile.message.3 = The selected file must use the template required
-
 class CommonFileValidation @Inject() ()(using ec: ExecutionContext) extends Logging {
 
   def validateFile(up: UpscanSuccessRequest, vt: ValidationType): Future[Either[ValidationError, Unit]] = Future {
