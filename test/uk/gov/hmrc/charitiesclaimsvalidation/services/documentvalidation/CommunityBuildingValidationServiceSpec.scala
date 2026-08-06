@@ -24,7 +24,7 @@ import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.Communi
 import uk.gov.hmrc.charitiesclaimsvalidation.util.BaseSpec
 
 import cats.effect.unsafe.implicits.global
-import java.time.LocalDate
+import java.time.LocalDateTime
 
 class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPropertyChecks {
 
@@ -140,7 +140,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, _) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, _) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors should have size 1
       errors.head.field shouldBe "item[0]"
@@ -216,7 +216,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, _) = validateRows(rowList, LocalDate.of(2025, 12, 18))
+      val (errors, _) = validateRows(rowList, LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors should have size 12
       errors.head.field shouldBe "item[1]"
@@ -262,7 +262,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, _) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, _) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors should have size 1
       errors.head.error shouldBe "validationService.communityBuildings.message.2"
@@ -283,7 +283,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, _) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, _) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors should have size 1
       errors.head.error shouldBe "validationService.communityBuildings.message.4"
@@ -313,7 +313,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
           )
         )
 
-        val (errors, _) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+        val (errors, _) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
         errors should contain(ValidationError("buildingName[0]", "validationService.communityBuildings.message.3"))
       }
@@ -334,7 +334,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, valids) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, valids) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors shouldBe empty
       valids should have size 1
@@ -355,7 +355,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, valids) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, valids) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors shouldBe empty
       valids shouldBe List(
@@ -390,7 +390,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, _) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, _) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors should have size 1
       errors.head.error shouldBe "validationService.communityBuildings.message.6"
@@ -411,7 +411,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, valids) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, valids) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors shouldBe empty
       valids shouldBe List(
@@ -463,7 +463,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
           )
         )
 
-        val (errors, valids) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+        val (errors, valids) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
         withClue(s"Postcode $postcode should be valid: ") {
           errors shouldBe empty
@@ -499,7 +499,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
           )
         )
 
-        val (errors, _) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+        val (errors, _) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
         withClue(s"Postcode '$postcode' should be invalid: ") {
           errors should not be empty
@@ -522,7 +522,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, _) = validateRows(List(row), LocalDate.of(2016, 12, 18)) // CY=2017, CY-3=2014
+      val (errors, _) = validateRows(List(row), LocalDateTime.of(2016, 12, 18, 12, 36, 49, 999)) // CY=2017, CY-3=2014
 
       errors should have size 1
       errors.last.error shouldBe "validationService.communityBuildings.message.15"
@@ -544,7 +544,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, valids) = validateRows(List(row), LocalDate.of(2017, 12, 18)) // CY=2018, CY-3=2015
+      val (errors, valids) = validateRows(List(row), LocalDateTime.of(2017, 12, 18, 12, 36, 49, 999)) // CY=2018, CY-3=2015
 
       errors shouldBe empty
       valids should have size 1
@@ -565,7 +565,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, _) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, _) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors should have size 1
       errors.head.error shouldBe "validationService.communityBuildings.message.14"
@@ -588,7 +588,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, valids) = validateRows(List(row), LocalDate.of(2026, 2, 5)) // Before April 6th
+      val (errors, valids) = validateRows(List(row), LocalDateTime.of(2026, 2, 5, 23, 59, 59, 999999999)) // Before April 6th
 
       errors shouldBe empty
       valids should have size 1
@@ -610,7 +610,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, valids) = validateRows(List(row), LocalDate.of(2026, 2, 5))
+      val (errors, valids) = validateRows(List(row), LocalDateTime.of(2026, 2, 5, 12, 36, 49, 999))
 
       errors shouldBe empty
       valids should have size 1
@@ -632,7 +632,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, _) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, _) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors should have size 1
       errors.head.error shouldBe "validationService.communityBuildings.message.15"
@@ -653,7 +653,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, valids) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, valids) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors shouldBe empty
       valids should have size 1
@@ -675,7 +675,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, _) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, _) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors should have size 1
       errors.head.error shouldBe "validationService.communityBuildings.message.18"
@@ -696,7 +696,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, _) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, _) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors should have size 1
       errors.head.error shouldBe "validationService.communityBuildings.message.18"
@@ -717,7 +717,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, _) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, _) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors should have size 1
       errors.head.error shouldBe "validationService.communityBuildings.message.17"
@@ -738,7 +738,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, _) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, _) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors should have size 1
       errors.head.error shouldBe "validationService.communityBuildings.message.10"
@@ -759,7 +759,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
 
-      val (errors, _) = validateRows(List(row), LocalDate.of(2025, 12, 18))
+      val (errors, _) = validateRows(List(row), LocalDateTime.of(2025, 12, 18, 12, 36, 49, 999))
 
       errors should have size 1
       errors.head.error shouldBe "validationService.communityBuildings.message.20"
@@ -1065,7 +1065,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
           )
         )
       ),
-      LocalDate.of(2026, 4, 5)
+      LocalDateTime.of(2026, 4, 5, 23, 59, 59, 999999999)
     )
 
     errorRows should have size 0
