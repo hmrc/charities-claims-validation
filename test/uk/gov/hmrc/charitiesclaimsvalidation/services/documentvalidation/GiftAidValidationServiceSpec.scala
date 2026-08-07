@@ -17,6 +17,7 @@
 package uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation
 
 import cats.effect.unsafe.implicits.global
+import play.api.libs.json.Json
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{GiftAidDonation, GiftAidScheduleData, ValidationError}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.GiftAidDonationRow
 import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.GiftAidValidationService.GiftAidDonationRowWithIndex
@@ -111,7 +112,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
       validResult.value shouldBe validDataNoEarliestDonationDate
     }
 
-    "return every parsed row, with the fields that failed validation left empty, given spreadsheet with invalid data" in {
+    "return every parsed row alongside the errors, given spreadsheet with invalid data" in {
       val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidBadDataPath).futureValue
 
       errorResult shouldBe BadDataValidationErrors
@@ -144,23 +145,59 @@ class GiftAidValidationServiceSpec extends BaseSpec {
       )
     }
 
-    "index each error to the position of its donation in the returned list" in {
-      val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidBadDataPath).futureValue
+    "include the value that was entered for every field that failed validation, or that a row level rule discarded" in {
+      val (errorRows, donationRows) = GiftAidValidationService.validateRows(
+        List(
+          GiftAidDonationRowWithIndex(
+            0,
+            GiftAidDonationRow("4", "Miss", "B", "Chaudry", "21", "L434FB", "", "Yes", "26/04/15", "80.00")
+          ),
+          GiftAidDonationRowWithIndex(
+            1,
+            GiftAidDonationRow("x", "Dr", "Jane", "Doe", "", "", "One off Gift Aid donations", "Maybe", "31/02/15", "10.000")
+          )
+        )
+      )
 
-      val donations = validResult.value.donations
+      errorRows.map(_.field) should contain allOf ("postcode[0]", "item[1]", "aggregateDonationsConflict[1]", "donationDate[1]", "donationAmount[1]")
 
-      errorResult.foreach {
-        case ValidationError(s"item[$index]", _)           => donations(index.toInt).donationItem shouldBe None
-        case ValidationError(s"donorTitle[$index]", _)     => donations(index.toInt).donorTitle shouldBe None
-        case ValidationError(s"donorFirstName[$index]", _) => donations(index.toInt).donorFirstName shouldBe None
-        case ValidationError(s"donorLastName[$index]", _)  => donations(index.toInt).donorLastName shouldBe None
-        case ValidationError(s"donorHouse[$index]", _)     => donations(index.toInt).donorHouse shouldBe None
-        case ValidationError(s"postcode[$index]", _)       => donations(index.toInt).donorPostcode shouldBe None
-        case ValidationError(s"sponsoredEvent[$index]", _) => donations(index.toInt).sponsoredEvent shouldBe None
-        case ValidationError(s"donationDate[$index]", _)   => donations(index.toInt).donationDate shouldBe None
-        case ValidationError(s"donationAmount[$index]", _) => donations(index.toInt).donationAmount shouldBe None
-        case _                                             => succeed
-      }
+      Json.toJson(donationRows.head) shouldBe Json.obj(
+        "donationItem"   -> 4,
+        "donorTitle"     -> "Miss",
+        "donorFirstName" -> "B",
+        "donorLastName"  -> "Chaudry",
+        "donorHouse"     -> "21",
+        "sponsoredEvent" -> true,
+        "donationDate"   -> "2015-04-26",
+        "donationAmount" -> "80.00",
+        "enteredValues"  -> Json.obj("donorPostcode" -> "L434FB")
+      )
+
+      Json.toJson(donationRows(1)) shouldBe Json.obj(
+        "aggregatedDonations" -> "One off Gift Aid donations",
+        "enteredValues" -> Json.obj(
+          "donationItem"   -> "x",
+          "donorTitle"     -> "Dr",
+          "donorFirstName" -> "Jane",
+          "donorLastName"  -> "Doe",
+          "sponsoredEvent" -> "Maybe",
+          "donationDate"   -> "31/02/15",
+          "donationAmount" -> "10.000"
+        )
+      )
+    }
+
+    "keep the entered values intact when the donations are stored and read back" in {
+      val (_, donationRows) = GiftAidValidationService.validateRows(
+        List(
+          GiftAidDonationRowWithIndex(
+            0,
+            GiftAidDonationRow("x", "Dr", "Jane", "Doe", "", "", "One off Gift Aid donations", "Maybe", "31/02/15", "10.000")
+          )
+        )
+      )
+
+      Json.toJson(donationRows).as[List[GiftAidDonation]] shouldBe donationRows
     }
 
     "return no errors and no valid rows when spreadsheet is empty" in {
@@ -226,6 +263,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
           errorRows should contain(itemError)
           donationRows.map(_.donationItem) shouldBe List(None)
+          donationRows.head.enteredValues.get("donationItem") shouldBe Option.when(item.trim.nonEmpty)(item.trim)
         }
       }
     }
@@ -261,6 +299,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
           errorRows should contain(titleInvalidError)
           donationRows.map(_.donorTitle) shouldBe List(None)
+          donationRows.head.enteredValues.get("donorTitle") shouldBe Some(title)
         }
       }
     }
@@ -350,6 +389,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
           errorRows should contain(nameInvalidError)
           donationRows.map(_.donorFirstName) shouldBe List(None)
+          donationRows.head.enteredValues.get("donorFirstName") shouldBe Some(name)
         }
       }
 
@@ -371,6 +411,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
           errorRows should contain(ValidationError("donorFirstName[0]", "validationService.giftAid.message.14"))
           donationRows.map(_.donorFirstName) shouldBe List(None)
+          donationRows.head.enteredValues.get("donorFirstName") shouldBe Some(name)
         }
       }
     }
@@ -433,6 +474,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
           errorRows should contain(houseNameInvalidError)
           donationRows.map(_.donorHouse) shouldBe List(None)
+          donationRows.head.enteredValues.get("donorHouse") shouldBe Some(house)
         }
       }
     }
@@ -468,6 +510,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
           errorRows should contain(postCodeInvalidError)
           donationRows.map(_.donorPostcode) shouldBe List(None)
+          donationRows.head.enteredValues.get("donorPostcode") shouldBe Some(postcode)
         }
       }
     }
@@ -527,6 +570,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
           errorRows should contain(sponsoredEventInvalidError)
           donationRows.map(_.sponsoredEvent) shouldBe List(None)
+          donationRows.head.enteredValues.get("sponsoredEvent") shouldBe Some(event)
         }
       }
     }
@@ -567,6 +611,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
           errorRows should contain(amountInvalidError)
           donationRows.map(_.donationAmount) shouldBe List(None)
+          donationRows.head.enteredValues.get("donationAmount") shouldBe Some(amount)
         }
       }
 
@@ -580,6 +625,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
           errorRows should contain(aggregationAmountInvalidError)
           donationRows.map(_.donationAmount) shouldBe List(None)
+          donationRows.head.enteredValues.get("donationAmount") shouldBe Some(amount)
         }
       }
     }
@@ -621,6 +667,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
           errorRows should contain(dateInvalidError)
           donationRows.map(_.donationDate) shouldBe List(None)
+          donationRows.head.enteredValues.get("donationDate") shouldBe Some(date)
         }
       }
 
@@ -635,6 +682,7 @@ class GiftAidValidationServiceSpec extends BaseSpec {
 
           errorRows should contain(dateInFutureError)
           donationRows.map(_.donationDate) shouldBe List(None)
+          donationRows.head.enteredValues.get("donationDate") shouldBe Some(date)
         }
       }
 

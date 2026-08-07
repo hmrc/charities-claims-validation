@@ -25,6 +25,7 @@ import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.ApplicationLifecycle
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.charitiesclaimsvalidation.controllers.routes
 import uk.gov.hmrc.http.HttpReads.Implicits.*
@@ -245,6 +246,55 @@ class GetUploadResultISpec
     (result.json \ "fileStatus").as[String] shouldBe "VALIDATION_FAILED"
     (result.json \ "errors").as[Seq[play.api.libs.json.JsValue]].size shouldBe 2
     ((result.json \ "errors")(0) \ "field").as[String] shouldBe "earliestDonationDate"
+  }
+
+  test("GET upload result returns the values that were entered for fields that failed validation") {
+    stubAuthenticate()
+
+    val donation = GiftAidDonation(
+      donationItem = None,
+      donorTitle = Some("Miss"),
+      donorFirstName = None,
+      donorLastName = None,
+      donorHouse = None,
+      donorPostcode = Some("L434FB"),
+      aggregatedDonations = None,
+      sponsoredEvent = None,
+      donationDate = Some(java.time.LocalDate.of(2025, 4, 26)),
+      donationAmount = None,
+      enteredValues = Map("donationItem" -> "x", "sponsoredEvent" -> "Maybe", "donationAmount" -> "10.000")
+    )
+
+    val status = ValidationFailedStatus(
+      claimId = claimId,
+      reference = reference,
+      validationType = GiftAid,
+      giftAidScheduleData = Some(GiftAidScheduleData(None, None, None, List(donation))),
+      errors = Seq(ValidationError("postcode[0]", "validationService.giftAid.message.21")),
+      createdAt = Instant.now(),
+      updatedAt = Instant.now()
+    )
+    await(claimValidationRepository.insert(status))
+
+    val httpClient = app.injector.instanceOf[HttpClientV2]
+    val url        = routes.ClaimReferenceController.getUploadResult(claimId, reference).url
+    val request    = httpClient.get(URI.create(s"http://localhost:$port$url").toURL)
+    val result     = await(request.execute[HttpResponse])
+
+    result.status shouldBe 200
+
+    val returned = (result.json \ "giftAidScheduleData" \ "donations")(0)
+
+    returned shouldBe Json.obj(
+      "donorTitle"    -> "Miss",
+      "donorPostcode" -> "L434FB",
+      "donationDate"  -> "2025-04-26",
+      "enteredValues" -> Json.obj(
+        "donationItem"   -> "x",
+        "sponsoredEvent" -> "Maybe",
+        "donationAmount" -> "10.000"
+      )
+    )
   }
 
   test("GET upload result returns 404 when reference does not exist") {
