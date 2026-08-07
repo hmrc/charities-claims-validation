@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.charitiesclaimsvalidation.models.domain
 
-import play.api.libs.json.{Format, Json, OFormat, Reads}
+import play.api.libs.json.{Format, Json, OFormat, OWrites, Reads}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.formats.JsonImplicits.bigDecimalWrites
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.DocumentRow
 
@@ -32,7 +32,8 @@ final case class GiftAidDonation(
   aggregatedDonations: Option[String],
   sponsoredEvent: Option[Boolean],
   donationDate: Option[LocalDate],
-  donationAmount: Option[BigDecimal]
+  donationAmount: Option[BigDecimal],
+  enteredValues: Map[String, String] = Map.empty
 ) extends DocumentRow
 
 object GiftAidDonation {
@@ -42,5 +43,13 @@ object GiftAidDonation {
     play.api.libs.json.Writes.DefaultLocalDateWrites
   )
 
-  implicit val format: OFormat[GiftAidDonation] = Json.format[GiftAidDonation]
+  private val derivedFormat: OFormat[GiftAidDonation] = Json.format[GiftAidDonation]
+
+  implicit val format: OFormat[GiftAidDonation] = OFormat(
+    derivedFormat,
+    OWrites { (donation: GiftAidDonation) =>
+      val json = derivedFormat.writes(donation)
+      if donation.enteredValues.isEmpty then json - "enteredValues" else json
+    }
+  )
 }

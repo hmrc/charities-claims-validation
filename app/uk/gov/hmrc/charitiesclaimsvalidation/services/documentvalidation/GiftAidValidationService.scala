@@ -132,7 +132,7 @@ object GiftAidValidationService {
     val isAggregated = DonationType.fromRow(row).isAggregated
 
     val itemV                   = validateItem(row.donationItem, index)
-    val aggregateDonationRulesV = validateAggregateDonationRules(row, index)
+    val aggregateDonationRulesV = validateAggregateDonationRules(row, index, isAggregated)
     val titleV                  = validateTitle(row.donorTitle, index, isAggregated)
     val firstNameV              = validateName(row.donorFirstName, "First name", s"donorFirstName[$index]", isAggregated)
     val lastNameV               = validateName(row.donorLastName, "Last name", s"donorLastName[$index]", isAggregated)
@@ -157,6 +157,19 @@ object GiftAidValidationService {
       amountV
     ).collect { case Validated.Invalid(errs) => errs.toList }.flatten
 
+    val enteredValues = List(
+      "donationItem"        -> discarded(itemV.toOption, row.donationItem),
+      "donorTitle"          -> discarded(titleV.toOption.flatten, row.donorTitle),
+      "donorFirstName"      -> discarded(firstNameV.toOption.flatten, row.donorFirstName),
+      "donorLastName"       -> discarded(lastNameV.toOption.flatten, row.donorLastName),
+      "donorHouse"          -> discarded(houseV.toOption.flatten, row.donorHouse),
+      "donorPostcode"       -> discarded(postcodeV.toOption.flatten, row.donorPostcode),
+      "aggregatedDonations" -> discarded(aggregatedDonationsV.toOption.flatten, row.aggregatedDonations),
+      "sponsoredEvent"      -> discarded(sponsoredEventV.toOption.flatten, row.sponsoredEvent),
+      "donationDate"        -> discarded(dateV.toOption, row.donationDate),
+      "donationAmount"      -> discarded(amountV.toOption, row.donationAmount)
+    ).collect { case (field, Some(value)) => field -> value }.toMap
+
     val donation = GiftAidDonation(
       itemV.toOption,
       titleV.toOption.flatten,
@@ -165,9 +178,10 @@ object GiftAidValidationService {
       houseV.toOption.flatten,
       postcodeV.toOption.flatten,
       aggregatedDonationsV.toOption.flatten,
-      sponsoredEventV.toOption,
+      sponsoredEventV.toOption.flatten,
       dateV.toOption,
-      amountV.toOption
+      amountV.toOption,
+      enteredValues
     )
 
     (errors, donation)
@@ -438,28 +452,27 @@ object GiftAidValidationService {
     raw: String,
     index: Int,
     isAggregated: Boolean
-  ): V[Boolean] = {
+  ): V[Option[Boolean]] = {
     val field = s"sponsoredEvent[$index]"
     val input = removeNonWesternCharacters(raw.trim.toLowerCase)
     if (!isAggregated) {
       if (input.isEmpty) {
-        false.validNel
+        Some(false).validNel
       } else if (sponsoredEventYesValues.contains(input)) {
-        true.validNel
+        Some(true).validNel
       } else {
         invalid(
           field,
           "validationService.giftAid.message.22"
         )
       }
-    } else false.validNel
+    } else Option.when(input.isEmpty)(false).validNel
   }
 
-  private def validateAggregateDonationRules(row: GiftAidDonationRow, index: Int): V[Unit] = {
-    val field        = s"aggregateDonationsConflict[$index]"
-    val donationType = DonationType.fromRow(row)
+  private def validateAggregateDonationRules(row: GiftAidDonationRow, index: Int, isAggregated: Boolean): V[Unit] = {
+    val field = s"aggregateDonationsConflict[$index]"
 
-    if (!donationType.isAggregated) {
+    if (!isAggregated) {
       ().validNel
     } else {
       val rules: List[(Boolean, String)] = List(
@@ -479,6 +492,9 @@ object GiftAidValidationService {
       }
     }
   }
+
+  private def discarded(validatedValue: Option[?], raw: String): Option[String] =
+    Option.when(validatedValue.isEmpty)(raw.trim).filter(_.nonEmpty)
 
   private def invalid(field: String, msg: String): V[Nothing] =
     ValidationError(field, msg).invalidNel

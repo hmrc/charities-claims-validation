@@ -190,3 +190,31 @@ class ClaimValidationStatusSpec extends AnyWordSpec with Matchers:
       validated.connectedCharitiesData shouldBe defined
       validated.connectedCharitiesData.get.charities shouldBe connectedData.charities
       validated.fileStatus shouldBe "VALIDATED"
+
+    "deserialize a gift aid document stored before entered values existed" in:
+      val storedInstant = Json.toJson(timestamp)(uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats.instantFormat)
+
+      val legacyDonation = Json.obj(
+        "donationItem"   -> 1,
+        "donorTitle"     -> "Prof",
+        "donorPostcode"  -> "M99 2QD",
+        "sponsoredEvent" -> false,
+        "donationDate"   -> "2015-03-24",
+        "donationAmount" -> "240.00"
+      )
+
+      val legacyDocument = Json.obj(
+        "_id"                 -> Json.obj("claimId" -> claimId, "reference" -> ref1),
+        "validationType"      -> "GiftAid",
+        "fileStatus"          -> "VALIDATION_FAILED",
+        "giftAidScheduleData" -> Json.obj("prevOverclaimedGiftAid" -> "0.00", "donations" -> Json.arr(legacyDonation)),
+        "errors"              -> Json.arr(Json.obj("field" -> "postcode[0]", "error" -> "validationService.giftAid.message.21")),
+        "createdAt"           -> storedInstant,
+        "updatedAt"           -> storedInstant
+      )
+
+      val parsed   = legacyDocument.as[ClaimValidationStatus]
+      val donation = parsed.asInstanceOf[ValidationFailedStatus].giftAidScheduleData.get.donations.head
+
+      donation.enteredValues shouldBe empty
+      Json.toJson(donation) shouldBe legacyDonation
