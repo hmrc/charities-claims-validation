@@ -35,7 +35,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
 
       errorResult shouldBe empty
       validResult.value.communityBuildings should not be empty
-      validResult.value.communityBuildings.head.communityBuildingItem shouldBe 1
+      validResult.value.communityBuildings.head.communityBuildingItem shouldBe Some(1)
       validResult.value.communityBuildings.head.buildingName should not be empty
     }
 
@@ -45,7 +45,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
 
       errorResult shouldBe empty
       validResult.value.communityBuildings should not be empty
-      validResult.value.communityBuildings.head.communityBuildingItem shouldBe 1
+      validResult.value.communityBuildings.head.communityBuildingItem shouldBe Some(1)
       validResult.value.communityBuildings.head.buildingName should not be empty
     }
 
@@ -55,7 +55,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
 
       errorResult shouldBe empty
       validResult.value.communityBuildings should not be empty
-      validResult.value.communityBuildings.head.communityBuildingItem shouldBe 1
+      validResult.value.communityBuildings.head.communityBuildingItem shouldBe Some(1)
       validResult.value.communityBuildings.head.buildingName should not be empty
     }
 
@@ -362,12 +362,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         ValidatedBuildingWithIndex(
           errorIndex = 1,
           building = CommunityBuilding(
-            communityBuildingItem = 1,
-            buildingName = "There are multiple spaces",
-            firstLineOfAddress = "123 Street",
-            postcode = "SW1A 1AA",
-            taxYear1 = 2023,
-            amountYear1 = BigDecimal("100.00"),
+            communityBuildingItem = Some(1),
+            buildingName = Some("There are multiple spaces"),
+            firstLineOfAddress = Some("123 Street"),
+            postcode = Some("SW1A 1AA"),
+            taxYear1 = Some(2023),
+            amountYear1 = Some(BigDecimal("100.00")),
             taxYear2 = None,
             amountYear2 = None
           )
@@ -418,12 +418,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         ValidatedBuildingWithIndex(
           errorIndex = 1,
           building = CommunityBuilding(
-            communityBuildingItem = 1,
-            buildingName = "Test Building",
-            firstLineOfAddress = "There are multiple spaces",
-            postcode = "SW1A 1AA",
-            taxYear1 = 2023,
-            amountYear1 = BigDecimal("100.00"),
+            communityBuildingItem = Some(1),
+            buildingName = Some("Test Building"),
+            firstLineOfAddress = Some("There are multiple spaces"),
+            postcode = Some("SW1A 1AA"),
+            taxYear1 = Some(2023),
+            amountYear1 = Some(BigDecimal("100.00")),
             taxYear2 = None,
             amountYear2 = None
           )
@@ -592,7 +592,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
 
       errors shouldBe empty
       valids should have size 1
-      valids.head.building.taxYear1 shouldBe 2026
+      valids.head.building.taxYear1 shouldBe Some(2026)
     }
 
     "not produce future tax year error for tax year YYYY when today is before April 6th YYYY" in {
@@ -657,7 +657,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
 
       errors shouldBe empty
       valids should have size 1
-      valids.head.building.amountYear1 shouldBe BigDecimal("1234567.89")
+      valids.head.building.amountYear1 shouldBe Some(BigDecimal("1234567.89"))
     }
 
     "reject amount below minimum (0.01)" in {
@@ -774,12 +774,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building1 = ValidatedBuildingWithIndex(
         errorIndex = 0,
         building = CommunityBuilding(
-          communityBuildingItem = 24,
-          buildingName = "Test Building",
-          firstLineOfAddress = "31 test address",
-          postcode = "AB112CD",
-          taxYear1 = 2023,
-          amountYear1 = BigDecimal("100.00"),
+          communityBuildingItem = Some(24),
+          buildingName = Some("Test Building"),
+          firstLineOfAddress = Some("31 test address"),
+          postcode = Some("AB112CD"),
+          taxYear1 = Some(2023),
+          amountYear1 = Some(BigDecimal("100.00")),
           taxYear2 = None,
           amountYear2 = None
         )
@@ -788,12 +788,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building2 = ValidatedBuildingWithIndex(
         errorIndex = 1,
         building = CommunityBuilding(
-          communityBuildingItem = 25,
-          buildingName = "Test Building",
-          firstLineOfAddress = "31 test address",
-          postcode = "AB112CD",
-          taxYear1 = 2023, // Same tax year as building1 - this is the duplicate
-          amountYear1 = BigDecimal("200.00"),
+          communityBuildingItem = Some(25),
+          buildingName = Some("Test Building"),
+          firstLineOfAddress = Some("31 test address"),
+          postcode = Some("AB112CD"),
+          taxYear1 = Some(2023), // Same tax year as building1 - this is the duplicate
+          amountYear1 = Some(BigDecimal("200.00")),
           taxYear2 = None,
           amountYear2 = None
         )
@@ -810,12 +810,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building1 = ValidatedBuildingWithIndex(
         errorIndex = 0,
         building = CommunityBuilding(
-          communityBuildingItem = 24,
-          buildingName = "Test Building",
-          firstLineOfAddress = "31 test address",
-          postcode = "AB112CD",
-          taxYear1 = 2022,
-          amountYear1 = BigDecimal("100.00"),
+          communityBuildingItem = Some(24),
+          buildingName = Some("Test Building"),
+          firstLineOfAddress = Some("31 test address"),
+          postcode = Some("AB112CD"),
+          taxYear1 = Some(2022),
+          amountYear1 = Some(BigDecimal("100.00")),
           taxYear2 = Some(2023),
           amountYear2 = Some(BigDecimal("100.00"))
         )
@@ -824,12 +824,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building2 = ValidatedBuildingWithIndex(
         errorIndex = 1,
         building = CommunityBuilding(
-          communityBuildingItem = 26,
-          buildingName = "Test Building",
-          firstLineOfAddress = "31 test address",
-          postcode = "AB112CD",
-          taxYear1 = 2024,
-          amountYear1 = BigDecimal("200.00"),
+          communityBuildingItem = Some(26),
+          buildingName = Some("Test Building"),
+          firstLineOfAddress = Some("31 test address"),
+          postcode = Some("AB112CD"),
+          taxYear1 = Some(2024),
+          amountYear1 = Some(BigDecimal("200.00")),
           taxYear2 = Some(2025), // This is the 4th tax year - exceeds limit
           amountYear2 = Some(BigDecimal("200.00"))
         )
@@ -850,12 +850,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building1 = ValidatedBuildingWithIndex(
         errorIndex = 0,
         building = CommunityBuilding(
-          communityBuildingItem = 24,
-          buildingName = "Test Building",
-          firstLineOfAddress = "31 test address",
-          postcode = "AB112CD",
-          taxYear1 = 2021,
-          amountYear1 = BigDecimal("100.00"),
+          communityBuildingItem = Some(24),
+          buildingName = Some("Test Building"),
+          firstLineOfAddress = Some("31 test address"),
+          postcode = Some("AB112CD"),
+          taxYear1 = Some(2021),
+          amountYear1 = Some(BigDecimal("100.00")),
           taxYear2 = Some(2022),
           amountYear2 = Some(BigDecimal("100.00"))
         )
@@ -864,12 +864,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building2 = ValidatedBuildingWithIndex(
         errorIndex = 1,
         building = CommunityBuilding(
-          communityBuildingItem = 26,
-          buildingName = "Test Building",
-          firstLineOfAddress = "31 test address",
-          postcode = "AB112CD",
-          taxYear1 = 2023,
-          amountYear1 = BigDecimal("200.00"),
+          communityBuildingItem = Some(26),
+          buildingName = Some("Test Building"),
+          firstLineOfAddress = Some("31 test address"),
+          postcode = Some("AB112CD"),
+          taxYear1 = Some(2023),
+          amountYear1 = Some(BigDecimal("200.00")),
           taxYear2 = None,
           amountYear2 = None
         )
@@ -878,12 +878,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building3 = ValidatedBuildingWithIndex(
         errorIndex = 2,
         building = CommunityBuilding(
-          communityBuildingItem = 27,
-          buildingName = "Test Building",
-          firstLineOfAddress = "31 test address",
-          postcode = "AB112CD",
-          taxYear1 = 2024, // 4th unique year - exceeds limit
-          amountYear1 = BigDecimal("200.00"),
+          communityBuildingItem = Some(27),
+          buildingName = Some("Test Building"),
+          firstLineOfAddress = Some("31 test address"),
+          postcode = Some("AB112CD"),
+          taxYear1 = Some(2024), // 4th unique year - exceeds limit
+          amountYear1 = Some(BigDecimal("200.00")),
           taxYear2 = None,
           amountYear2 = None
         )
@@ -892,12 +892,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building4 = ValidatedBuildingWithIndex(
         errorIndex = 3,
         building = CommunityBuilding(
-          communityBuildingItem = 28,
-          buildingName = "Test Building",
-          firstLineOfAddress = "31 test address",
-          postcode = "AB112CD",
-          taxYear1 = 2022, // Duplicate of Item 24's taxYear2
-          amountYear1 = BigDecimal("200.00"),
+          communityBuildingItem = Some(28),
+          buildingName = Some("Test Building"),
+          firstLineOfAddress = Some("31 test address"),
+          postcode = Some("AB112CD"),
+          taxYear1 = Some(2022), // Duplicate of Item 24's taxYear2
+          amountYear1 = Some(BigDecimal("200.00")),
           taxYear2 = None,
           amountYear2 = None
         )
@@ -919,12 +919,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building1 = ValidatedBuildingWithIndex(
         errorIndex = 0,
         building = CommunityBuilding(
-          communityBuildingItem = 1,
-          buildingName = "Building A",
-          firstLineOfAddress = "1 Alpha Street",
-          postcode = "AA1 1AA",
-          taxYear1 = 2024,
-          amountYear1 = BigDecimal("100.00"),
+          communityBuildingItem = Some(1),
+          buildingName = Some("Building A"),
+          firstLineOfAddress = Some("1 Alpha Street"),
+          postcode = Some("AA1 1AA"),
+          taxYear1 = Some(2024),
+          amountYear1 = Some(BigDecimal("100.00")),
           taxYear2 = None,
           amountYear2 = None
         )
@@ -933,12 +933,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building2 = ValidatedBuildingWithIndex(
         errorIndex = 1,
         building = CommunityBuilding(
-          communityBuildingItem = 2,
-          buildingName = "Building A", // Duplicate of building1
-          firstLineOfAddress = "1 Alpha Street",
-          postcode = "AA1 1AA",
-          taxYear1 = 2024,
-          amountYear1 = BigDecimal("100.00"),
+          communityBuildingItem = Some(2),
+          buildingName = Some("Building A"), // Duplicate of building1
+          firstLineOfAddress = Some("1 Alpha Street"),
+          postcode = Some("AA1 1AA"),
+          taxYear1 = Some(2024),
+          amountYear1 = Some(BigDecimal("100.00")),
           taxYear2 = None,
           amountYear2 = None
         )
@@ -947,12 +947,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building3 = ValidatedBuildingWithIndex(
         errorIndex = 2,
         building = CommunityBuilding(
-          communityBuildingItem = 3,
-          buildingName = "Building B",
-          firstLineOfAddress = "2 Beta Street",
-          postcode = "BB2 2BB",
-          taxYear1 = 2024,
-          amountYear1 = BigDecimal("100.00"),
+          communityBuildingItem = Some(3),
+          buildingName = Some("Building B"),
+          firstLineOfAddress = Some("2 Beta Street"),
+          postcode = Some("BB2 2BB"),
+          taxYear1 = Some(2024),
+          amountYear1 = Some(BigDecimal("100.00")),
           taxYear2 = None,
           amountYear2 = None
         )
@@ -961,12 +961,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building4 = ValidatedBuildingWithIndex(
         errorIndex = 3,
         building = CommunityBuilding(
-          communityBuildingItem = 4,
-          buildingName = "Building B", // Duplicate of building3
-          firstLineOfAddress = "2 Beta Street",
-          postcode = "BB2 2BB",
-          taxYear1 = 2024,
-          amountYear1 = BigDecimal("100.00"),
+          communityBuildingItem = Some(4),
+          buildingName = Some("Building B"), // Duplicate of building3
+          firstLineOfAddress = Some("2 Beta Street"),
+          postcode = Some("BB2 2BB"),
+          taxYear1 = Some(2024),
+          amountYear1 = Some(BigDecimal("100.00")),
           taxYear2 = None,
           amountYear2 = None
         )
@@ -975,12 +975,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building5 = ValidatedBuildingWithIndex(
         errorIndex = 4,
         building = CommunityBuilding(
-          communityBuildingItem = 5,
-          buildingName = "Building C",
-          firstLineOfAddress = "3 Charlie Street",
-          postcode = "CC3 3CC",
-          taxYear1 = 2024,
-          amountYear1 = BigDecimal("100.00"),
+          communityBuildingItem = Some(5),
+          buildingName = Some("Building C"),
+          firstLineOfAddress = Some("3 Charlie Street"),
+          postcode = Some("CC3 3CC"),
+          taxYear1 = Some(2024),
+          amountYear1 = Some(BigDecimal("100.00")),
           taxYear2 = None,
           amountYear2 = None
         )
@@ -989,12 +989,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building6 = ValidatedBuildingWithIndex(
         errorIndex = 5,
         building = CommunityBuilding(
-          communityBuildingItem = 6,
-          buildingName = "Building C", // Duplicate of building5
-          firstLineOfAddress = "3 Charlie Street",
-          postcode = "CC3 3CC",
-          taxYear1 = 2024,
-          amountYear1 = BigDecimal("100.00"),
+          communityBuildingItem = Some(6),
+          buildingName = Some("Building C"), // Duplicate of building5
+          firstLineOfAddress = Some("3 Charlie Street"),
+          postcode = Some("CC3 3CC"),
+          taxYear1 = Some(2024),
+          amountYear1 = Some(BigDecimal("100.00")),
           taxYear2 = None,
           amountYear2 = None
         )
@@ -1003,12 +1003,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building7 = ValidatedBuildingWithIndex(
         errorIndex = 6,
         building = CommunityBuilding(
-          communityBuildingItem = 7,
-          buildingName = "Building D",
-          firstLineOfAddress = "4 Delta Street",
-          postcode = "DD4 4DD",
-          taxYear1 = 2024,
-          amountYear1 = BigDecimal("100.00"),
+          communityBuildingItem = Some(7),
+          buildingName = Some("Building D"),
+          firstLineOfAddress = Some("4 Delta Street"),
+          postcode = Some("DD4 4DD"),
+          taxYear1 = Some(2024),
+          amountYear1 = Some(BigDecimal("100.00")),
           taxYear2 = None,
           amountYear2 = None
         )
@@ -1017,12 +1017,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       val building8 = ValidatedBuildingWithIndex(
         errorIndex = 7,
         building = CommunityBuilding(
-          communityBuildingItem = 8,
-          buildingName = "Building D", // Duplicate of building7
-          firstLineOfAddress = "4 Delta Street",
-          postcode = "DD4 4DD",
-          taxYear1 = 2024,
-          amountYear1 = BigDecimal("100.00"),
+          communityBuildingItem = Some(8),
+          buildingName = Some("Building D"), // Duplicate of building7
+          firstLineOfAddress = Some("4 Delta Street"),
+          postcode = Some("DD4 4DD"),
+          taxYear1 = Some(2024),
+          amountYear1 = Some(BigDecimal("100.00")),
           taxYear2 = None,
           amountYear2 = None
         )

@@ -24,7 +24,7 @@ import uk.gov.hmrc.charitiesclaimsvalidation.models.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NoRowsFoundException, NotAnOdsFileException}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{OtherIncome, OtherIncomeData, ValidationError, ValidationType}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.OtherIncomeRow
-import CommonFileValidation.{removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
+import CommonFileValidation.{discarded, enteredValuesOf, errorsOf, removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
 
 import java.io.FileNotFoundException
 import java.time.LocalDate
@@ -49,15 +49,15 @@ class OtherIncomeValidationService @Inject() ()(using ioRuntime: IORuntime) exte
 
           adjustmentForOtherIncomeCell <- OdsReaderService.cellFromDocument(doc, OtherIncomeRow.ADJ_OTHER_INCOME_PREV_CLAIM_FIELD)
           otherIncomeRowWithIndex = rawOtherIncomeRowsWithIndex.map { case (idx, row) => OtherIncomeValidationService.OtherRowWithIndex(idx, row) }
-          (rowErrors, validOtherIncomeRows) = OtherIncomeValidationService.validateRows(otherIncomeRowWithIndex, today = LocalDate.now)
-          validatedAdjustment               = OtherIncomeValidationService.validateAdjustment(adjustmentForOtherIncomeCell)
-          totalGrossPayments                = Some(validOtherIncomeRows.map(_.grossPayment).fold(BigDecimal(0))(_ + _))
-          totalTaxDeducted                  = Some(validOtherIncomeRows.map(_.taxDeducted).fold(BigDecimal(0))(_ + _))
+          (rowErrors, otherIncomeRows) = OtherIncomeValidationService.validateRows(otherIncomeRowWithIndex, today = LocalDate.now)
+          validatedAdjustment          = OtherIncomeValidationService.validateAdjustment(adjustmentForOtherIncomeCell)
+          totalGrossPayments           = Some(otherIncomeRows.flatMap(_.grossPayment).sum)
+          totalTaxDeducted             = Some(otherIncomeRows.flatMap(_.taxDeducted).sum)
         } yield validatedAdjustment match {
           case Left(validationError) =>
-            (validationError :: rowErrors, OtherIncomeData(None, totalGrossPayments, totalTaxDeducted, validOtherIncomeRows).some)
-          case Right(Some(adjAmount)) => (rowErrors, OtherIncomeData(adjAmount.some, totalGrossPayments, totalTaxDeducted, validOtherIncomeRows).some)
-          case Right(None)            => (rowErrors, OtherIncomeData(None, totalGrossPayments, totalTaxDeducted, validOtherIncomeRows).some)
+            (validationError :: rowErrors, OtherIncomeData(None, totalGrossPayments, totalTaxDeducted, otherIncomeRows).some)
+          case Right(Some(adjAmount)) => (rowErrors, OtherIncomeData(adjAmount.some, totalGrossPayments, totalTaxDeducted, otherIncomeRows).some)
+          case Right(None)            => (rowErrors, OtherIncomeData(None, totalGrossPayments, totalTaxDeducted, otherIncomeRows).some)
         }
       }
       .recover {
@@ -100,16 +100,9 @@ object OtherIncomeValidationService {
     today: LocalDate
   ): (List[ValidationError], List[OtherIncome]) = {
 
-    val validated: List[V[OtherIncome]] =
-      inputRows.map(validateRow(_, today))
+    val (rowErrors, otherIncomes) = inputRows.map(validateRow(_, today)).unzip
 
-    val errors =
-      validated.collect { case Validated.Invalid(errs) => errs.toList }.flatten
-
-    val valids =
-      validated.collect { case Validated.Valid(row) => row }
-
-    (errors, valids)
+    (rowErrors.flatten, otherIncomes)
   }
 
   private def validateAdjustment(adjustmentOtherIncomeCell: String): Either[ValidationError, Option[BigDecimal]] = {
@@ -133,7 +126,7 @@ object OtherIncomeValidationService {
     }
   }
 
-  private def validateRow(otherRowWithIndex: OtherRowWithIndex, today: LocalDate): V[OtherIncome] = {
+  private def validateRow(otherRowWithIndex: OtherRowWithIndex, today: LocalDate): (List[ValidationError], OtherIncome) = {
     import otherRowWithIndex.*
 
     val errorIndex = index - OtherIncomeRow.layout.rowRange.start
@@ -162,9 +155,26 @@ object OtherIncomeValidationService {
           ().validNel
       }
 
-    (itemV, nameV, dateV, grossV, taxV, taxLessThanGrossV).mapN { (item, name, date, gross, tax, _) =>
-      OtherIncome(item, name, date, gross, tax)
-    }
+    val errors = errorsOf(itemV, nameV, dateV, grossV, taxV, taxLessThanGrossV)
+
+    val enteredValues = enteredValuesOf(
+      "otherIncomeItem" -> discarded(itemV.toOption, row.otherIncomeItem),
+      "payerName"       -> discarded(nameV.toOption, row.payerName),
+      "paymentDate"     -> discarded(dateV.toOption, row.paymentDate),
+      "grossPayment"    -> discarded(grossV.toOption, row.grossPayment),
+      "taxDeducted"     -> discarded(taxV.toOption, row.taxDeducted)
+    )
+
+    val otherIncome = OtherIncome(
+      otherIncomeItem = itemV.toOption,
+      payerName = nameV.toOption,
+      paymentDate = dateV.toOption,
+      grossPayment = grossV.toOption,
+      taxDeducted = taxV.toOption,
+      enteredValues = enteredValues
+    )
+
+    (errors, otherIncome)
   }
 
   private def validateItem(raw: String, index: Int): V[Int] = {

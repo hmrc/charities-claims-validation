@@ -42,6 +42,15 @@ object JsonImplicits:
   given Writes[NonEmptyString] =
     Writes(str => JsString(str.value))
 
+  def omittingEmptyEnteredValues[A](derived: OFormat[A])(enteredValues: A => Map[String, String]): OFormat[A] =
+    OFormat(
+      derived,
+      OWrites { (value: A) =>
+        val json = derived.writes(value)
+        if enteredValues(value).isEmpty then json - "enteredValues" else json
+      }
+    )
+
   extension (path: JsPath)
     def requiredNonEmpty(using Reads[NonEmptyString]): Reads[NonEmptyString] = {
       val param = path.path.collect { case KeyPathNode(k) => k }.lastOption.getOrElse("param")

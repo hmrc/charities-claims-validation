@@ -23,7 +23,7 @@ import cats.implicits.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.ConnectedCharitiesRow
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NoRowsFoundException, NotAnOdsFileException}
-import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
+import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{discarded, enteredValuesOf, errorsOf, removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
 
 import java.io.FileNotFoundException
 import javax.inject.{Inject, Singleton}
@@ -88,15 +88,12 @@ object ConnectedCharitiesValidationService {
     inputRows: List[ConnectedCharitiesRowWithIndex]
   ): (List[ValidationError], List[Charity]) = {
 
-    val validated: List[V[Charity]] = inputRows.map(validateRow)
+    val (rowErrors, charities) = inputRows.map(validateRow).unzip
 
-    val errors = validated.collect { case Validated.Invalid(errs) => errs.toList }.flatten
-    val valid  = validated.collect { case Validated.Valid(row) => row }
-
-    (errors, valid)
+    (rowErrors.flatten, charities)
   }
 
-  private def validateRow(connectedCharitiesRowWithIndex: ConnectedCharitiesRowWithIndex): V[Charity] = {
+  private def validateRow(connectedCharitiesRowWithIndex: ConnectedCharitiesRowWithIndex): (List[ValidationError], Charity) = {
     import connectedCharitiesRowWithIndex.*
 
     val errorIndex = index - ConnectedCharitiesRow.layout.rowRange.start
@@ -106,9 +103,22 @@ object ConnectedCharitiesValidationService {
     val nameV      = validateName(row.charityName, errorIndex)
     val referenceV = validateReference(row.charityReference, errorIndex)
 
-    (itemV, nameV, referenceV).mapN { (item, name, reference) =>
-      Charity(item, name, reference)
-    }
+    val errors = errorsOf(itemV, nameV, referenceV)
+
+    val enteredValues = enteredValuesOf(
+      "charityItem"      -> discarded(itemV.toOption, row.connectedCharitiesItem),
+      "charityName"      -> discarded(nameV.toOption, row.charityName),
+      "charityReference" -> discarded(referenceV.toOption, row.charityReference)
+    )
+
+    val charity = Charity(
+      charityItem = itemV.toOption,
+      charityName = nameV.toOption,
+      charityReference = referenceV.toOption,
+      enteredValues = enteredValues
+    )
+
+    (errors, charity)
   }
 
   private def validateItem(raw: String, index: Int): V[Int] = {

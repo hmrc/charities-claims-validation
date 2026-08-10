@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation
 
+import cats.data.ValidatedNel
 import cats.effect.IO
 import play.api.Logging
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{ValidationError, ValidationType}
@@ -125,6 +126,15 @@ object CommonFileValidation {
     if normalisingSpacing then strBeforeNormalisingSpacing.replaceAll("\\s+", " ")
     else strBeforeNormalisingSpacing
   }
+
+  def discarded(validatedValue: Option[?], raw: String): Option[String] =
+    Option.when(validatedValue.isEmpty)(raw.trim).filter(_.nonEmpty)
+
+  def errorsOf(validated: ValidatedNel[ValidationError, ?]*): List[ValidationError] =
+    validated.toList.flatMap(_.fold(_.toList, _ => Nil))
+
+  def enteredValuesOf(fields: (String, Option[String])*): Map[String, String] =
+    fields.collect { case (field, Some(value)) => field -> value }.toMap
 
   private def isOdsMimeType(up: UpscanSuccessRequest): Boolean =
     up.uploadDetails.fileMimeType.equals(OdsMimeType)

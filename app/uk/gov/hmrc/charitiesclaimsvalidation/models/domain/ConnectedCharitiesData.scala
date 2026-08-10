@@ -17,6 +17,7 @@
 package uk.gov.hmrc.charitiesclaimsvalidation.models.domain
 
 import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.charitiesclaimsvalidation.models.formats.JsonImplicits.omittingEmptyEnteredValues
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.DocumentRow
 
 final case class ConnectedCharitiesData(
@@ -30,11 +31,12 @@ object ConnectedCharitiesData {
 }
 
 final case class Charity(
-  charityItem: Int,
-  charityName: String,
-  charityReference: String
+  charityItem: Option[Int],
+  charityName: Option[String],
+  charityReference: Option[String],
+  enteredValues: Map[String, String] = Map.empty
 ) extends DocumentRow
 
 object Charity {
-  implicit val format: OFormat[Charity] = Json.format[Charity]
+  implicit val format: OFormat[Charity] = omittingEmptyEnteredValues(Json.format[Charity])(_.enteredValues)
 }
