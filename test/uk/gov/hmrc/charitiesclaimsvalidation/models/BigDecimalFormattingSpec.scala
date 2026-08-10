@@ -96,11 +96,11 @@ class BigDecimalFormattingSpec extends AnyWordSpec with Matchers:
 
     "format OtherIncome monetary fields with two decimal places" in:
       val income = OtherIncome(
-        otherIncomeItem = 1,
-        payerName = "Test Payer",
-        paymentDate = LocalDate.of(2025, 1, 15),
-        grossPayment = BigDecimal(1000),
-        taxDeducted = BigDecimal(200)
+        otherIncomeItem = Some(1),
+        payerName = Some("Test Payer"),
+        paymentDate = Some(LocalDate.of(2025, 1, 15)),
+        grossPayment = Some(BigDecimal(1000)),
+        taxDeducted = Some(BigDecimal(200))
       )
 
       val json = Json.toJson(income)
@@ -120,12 +120,12 @@ class BigDecimalFormattingSpec extends AnyWordSpec with Matchers:
 
     "format CommunityBuilding monetary fields with two decimal places" in:
       val building = CommunityBuilding(
-        communityBuildingItem = 1,
-        buildingName = "St Mary's Church",
-        firstLineOfAddress = "123 Church Street",
-        postcode = "SW1A 1AA",
-        taxYear1 = 2023,
-        amountYear1 = BigDecimal(1500),
+        communityBuildingItem = Some(1),
+        buildingName = Some("St Mary's Church"),
+        firstLineOfAddress = Some("123 Church Street"),
+        postcode = Some("SW1A 1AA"),
+        taxYear1 = Some(2023),
+        amountYear1 = Some(BigDecimal(1500)),
         taxYear2 = Some(2024),
         amountYear2 = Some(BigDecimal(2000))
       )

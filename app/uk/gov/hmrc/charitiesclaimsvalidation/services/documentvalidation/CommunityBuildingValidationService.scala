@@ -24,7 +24,7 @@ import uk.gov.hmrc.charitiesclaimsvalidation.models.{domain, *}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{CommunityBuilding, CommunityBuildingData, ValidationError, ValidationType}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NoRowsFoundException, NotAnOdsFileException}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.CommunityBuildingRow
-import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
+import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{discarded, removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
 
 import java.io.FileNotFoundException
 import java.time.LocalDateTime
@@ -55,15 +55,15 @@ class CommunityBuildingValidationService @Inject() ()(using ioRuntime: IORuntime
             communityBuildingRowWithIndex,
             now = LocalDateTime.now()
           )
-          crossFieldErrors        = CommunityBuildingValidationService.validateCrossField(validatedBuildingsWithIndex)
-          allErrors               = CommunityBuildingValidationService.sortErrorsByField(rowErrors ++ crossFieldErrors)
-          validCommunityBuildings = validatedBuildingsWithIndex.map(_.building)
-          totalOfAllAmounts = Option.when(validCommunityBuildings.nonEmpty) {
-            validCommunityBuildings.foldLeft(BigDecimal(0)) { (tot, row) =>
-              tot + row.amountYear1 + row.amountYear2.getOrElse(BigDecimal(0))
+          crossFieldErrors   = CommunityBuildingValidationService.validateCrossField(validatedBuildingsWithIndex)
+          allErrors          = CommunityBuildingValidationService.sortErrorsByField(rowErrors ++ crossFieldErrors)
+          communityBuildings = validatedBuildingsWithIndex.map(_.building)
+          totalOfAllAmounts = Option.when(communityBuildings.nonEmpty) {
+            communityBuildings.foldLeft(BigDecimal(0)) { (tot, row) =>
+              tot + row.amountYear1.getOrElse(BigDecimal(0)) + row.amountYear2.getOrElse(BigDecimal(0))
             }
           }
-        } yield (allErrors, Some(domain.CommunityBuildingData(totalOfAllAmounts, validCommunityBuildings)))
+        } yield (allErrors, Some(domain.CommunityBuildingData(totalOfAllAmounts, communityBuildings)))
       }
       .recover {
         case NoRowsFoundException =>
@@ -98,15 +98,12 @@ object CommunityBuildingValidationService {
     )
 
   def validateRows(inputRows: List[BuildingRowWithIndex], now: LocalDateTime): (List[ValidationError], List[ValidatedBuildingWithIndex]) = {
-    val validated: List[V[ValidatedBuildingWithIndex]] = inputRows.map(validateRow(_, now))
+    val validated = inputRows.map(validateRow(_, now))
 
-    val errors = validated.collect { case Validated.Invalid(errs) => errs.toList }.flatten
-    val valids = validated.collect { case Validated.Valid(row) => row }
-
-    (errors, valids)
+    (validated.flatMap(_._1), validated.map(_._2))
   }
 
-  private def validateRow(buildingRowWithIndex: BuildingRowWithIndex, now: LocalDateTime): V[ValidatedBuildingWithIndex] = {
+  private def validateRow(buildingRowWithIndex: BuildingRowWithIndex, now: LocalDateTime): (List[ValidationError], ValidatedBuildingWithIndex) = {
     import buildingRowWithIndex.*
 
     val errorIndex = index - CommunityBuildingRow.layout.rowRange.start
@@ -121,21 +118,46 @@ object CommunityBuildingValidationService {
 
     val taxYear2ConditionalV = validateTaxYear2Conditional(row.taxYear1, row.taxYear2, row.amount2, errorIndex, now)
 
-    (itemV, nameV, addressV, postcodeV, taxYear1V, amount1V, taxYear2ConditionalV).mapN { (item, name, address, postcode, year1, amt1, year2Opt) =>
-      ValidatedBuildingWithIndex(
-        errorIndex = errorIndex,
-        building = CommunityBuilding(
-          communityBuildingItem = item,
-          buildingName = name,
-          firstLineOfAddress = address,
-          postcode = postcode,
-          taxYear1 = year1,
-          amountYear1 = amt1,
-          taxYear2 = year2Opt.map(_._1),
-          amountYear2 = year2Opt.map(_._2)
-        )
-      )
-    }
+    val errors = List[V[Any]](
+      itemV,
+      nameV,
+      addressV,
+      postcodeV,
+      taxYear1V,
+      amount1V,
+      taxYear2ConditionalV
+    ).collect { case Validated.Invalid(errs) => errs.toList }.flatten
+
+    val enteredValues = List(
+      "communityBuildingItem" -> discarded(itemV.toOption, row.item),
+      "buildingName"          -> discarded(nameV.toOption, row.buildingName),
+      "firstLineOfAddress"    -> discarded(addressV.toOption, row.firstLineOfAddress),
+      "postcode"              -> discarded(postcodeV.toOption, row.postcode),
+      "taxYear1"              -> discarded(taxYear1V.toOption, row.taxYear1),
+      "amountYear1"           -> discarded(amount1V.toOption, row.amount1),
+      "taxYear2"              -> discarded(taxYear2ConditionalV.toOption, row.taxYear2),
+      "amountYear2"           -> discarded(taxYear2ConditionalV.toOption, row.amount2)
+    ).collect { case (field, Some(value)) => field -> value }.toMap
+
+    val year2Opt = taxYear2ConditionalV.toOption.flatten
+
+    val validatedBuilding = ValidatedBuildingWithIndex(
+      errorIndex = errorIndex,
+      building = CommunityBuilding(
+        communityBuildingItem = itemV.toOption,
+        buildingName = nameV.toOption,
+        firstLineOfAddress = addressV.toOption,
+        postcode = postcodeV.toOption,
+        taxYear1 = taxYear1V.toOption,
+        amountYear1 = amount1V.toOption,
+        taxYear2 = year2Opt.map(_._1),
+        amountYear2 = year2Opt.map(_._2),
+        enteredValues = enteredValues
+      ),
+      isValid = errors.isEmpty
+    )
+
+    (errors, validatedBuilding)
   }
 
   private def validateItem(raw: String, index: Int): V[Int] = {
@@ -385,16 +407,21 @@ object CommunityBuildingValidationService {
   }
 
   def validateCrossField(buildings: List[ValidatedBuildingWithIndex]): List[ValidationError] = {
-    val buildingGroups = buildings.groupBy { vb =>
-      normalizeBuilding(vb.building.buildingName, vb.building.firstLineOfAddress, vb.building.postcode)
+    val buildingGroups = buildings.filter(_.isValid).groupBy { vb =>
+      normalizeBuilding(
+        vb.building.buildingName.getOrElse(""),
+        vb.building.firstLineOfAddress.getOrElse(""),
+        vb.building.postcode.getOrElse("")
+      )
     }
 
     buildingGroups.flatMap { case (_, buildingsForSameBuilding) =>
       // Track tax years with their associated error indices and item numbers
       val taxYearsWithIndices: List[(Int, Int, Int)] = buildingsForSameBuilding.flatMap { vb =>
-        val year1Entry = (vb.building.taxYear1, vb.errorIndex, vb.building.communityBuildingItem)
-        val year2Entry = vb.building.taxYear2.map(y => (y, vb.errorIndex, vb.building.communityBuildingItem))
-        year1Entry :: year2Entry.toList
+        val item       = vb.building.communityBuildingItem.getOrElse(0)
+        val year1Entry = vb.building.taxYear1.map(y => (y, vb.errorIndex, item))
+        val year2Entry = vb.building.taxYear2.map(y => (y, vb.errorIndex, item))
+        year1Entry.toList ++ year2Entry.toList
       }
 
       // Find duplicate tax years and report the item that caused the duplicate (the later occurrence)
@@ -478,6 +505,6 @@ object CommunityBuildingValidationService {
 
   final case class BuildingRowWithIndex(index: Int, row: CommunityBuildingRow)
 
-  final case class ValidatedBuildingWithIndex(errorIndex: Int, building: CommunityBuilding)
+  final case class ValidatedBuildingWithIndex(errorIndex: Int, building: CommunityBuilding, isValid: Boolean = true)
 
 }

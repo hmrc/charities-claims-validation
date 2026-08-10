@@ -30,11 +30,11 @@ class OtherIncomeSpec extends AnyWordSpec with Matchers:
   "OtherIncome" should:
     "serialize and deserialize OtherIncome correctly" in:
       val request = OtherIncome(
-        otherIncomeItem = 1,
-        payerName = "test name",
-        paymentDate = localDate,
-        grossPayment = 1.1,
-        taxDeducted = 1.1
+        otherIncomeItem = Some(1),
+        payerName = Some("test name"),
+        paymentDate = Some(localDate),
+        grossPayment = Some(1.1),
+        taxDeducted = Some(1.1)
       )
 
       val json   = Json.toJson(request)(OtherIncome.format)
@@ -47,11 +47,11 @@ class OtherIncomeSpec extends AnyWordSpec with Matchers:
   "OtherIncomeData" should:
     "serialize and deserialize OtherIncomeData correctly" in:
       val otherIncome = OtherIncome(
-        otherIncomeItem = 1,
-        payerName = "test name",
-        paymentDate = localDate,
-        grossPayment = 1.1,
-        taxDeducted = 1.1
+        otherIncomeItem = Some(1),
+        payerName = Some("test name"),
+        paymentDate = Some(localDate),
+        grossPayment = Some(1.1),
+        taxDeducted = Some(1.1)
       )
 
       val request = OtherIncomeData(

@@ -34,25 +34,25 @@ class OtherIncomeValidationServiceSpec extends BaseSpec with TableDrivenProperty
       totalOfTaxDeducted = Some(192.00),
       otherIncomes = List(
         OtherIncome(
-          otherIncomeItem = 1,
-          payerName = "Test User",
-          paymentDate = LocalDate.of(2025, 1, 1),
-          grossPayment = 1234.00,
-          taxDeducted = 56.00
+          otherIncomeItem = Some(1),
+          payerName = Some("Test User"),
+          paymentDate = Some(LocalDate.of(2025, 1, 1)),
+          grossPayment = Some(BigDecimal("1234.00")),
+          taxDeducted = Some(BigDecimal("56.00"))
         ),
         OtherIncome(
-          otherIncomeItem = 2,
-          payerName = "Test 2nd User",
-          paymentDate = LocalDate.of(2025, 2, 28),
-          grossPayment = 6789.00,
-          taxDeducted = 80.00
+          otherIncomeItem = Some(2),
+          payerName = Some("Test 2nd User"),
+          paymentDate = Some(LocalDate.of(2025, 2, 28)),
+          grossPayment = Some(BigDecimal("6789.00")),
+          taxDeducted = Some(BigDecimal("80.00"))
         ),
         OtherIncome(
-          otherIncomeItem = 3,
-          payerName = "Test UserOther",
-          paymentDate = LocalDate.of(2025, 1, 1),
-          grossPayment = 1234.00,
-          taxDeducted = 56.00
+          otherIncomeItem = Some(3),
+          payerName = Some("Test UserOther"),
+          paymentDate = Some(LocalDate.of(2025, 1, 1)),
+          grossPayment = Some(BigDecimal("1234.00")),
+          taxDeducted = Some(BigDecimal("56.00"))
         )
       )
     )
@@ -68,18 +68,18 @@ class OtherIncomeValidationServiceSpec extends BaseSpec with TableDrivenProperty
           totalOfTaxDeducted = Some(136.00),
           otherIncomes = List(
             OtherIncome(
-              otherIncomeItem = 1,
-              payerName = "Test User",
-              paymentDate = LocalDate.of(2025, 1, 1),
-              grossPayment = 1234.00,
-              taxDeducted = 56.00
+              otherIncomeItem = Some(1),
+              payerName = Some("Test User"),
+              paymentDate = Some(LocalDate.of(2025, 1, 1)),
+              grossPayment = Some(BigDecimal("1234.00")),
+              taxDeducted = Some(BigDecimal("56.00"))
             ),
             OtherIncome(
-              otherIncomeItem = 2,
-              payerName = "Test 2nd User",
-              paymentDate = LocalDate.of(2025, 2, 28),
-              grossPayment = 6789.00,
-              taxDeducted = 80.00
+              otherIncomeItem = Some(2),
+              payerName = Some("Test 2nd User"),
+              paymentDate = Some(LocalDate.of(2025, 2, 28)),
+              grossPayment = Some(BigDecimal("6789.00")),
+              taxDeducted = Some(BigDecimal("80.00"))
             )
           )
         )
@@ -112,7 +112,7 @@ class OtherIncomeValidationServiceSpec extends BaseSpec with TableDrivenProperty
 
         withClue(s"$date: ") {
           errorRows shouldBe empty
-          validRows.map(_.paymentDate) shouldBe List(LocalDate.of(2025, 1, 1))
+          validRows.map(_.paymentDate) shouldBe List(Some(LocalDate.of(2025, 1, 1)))
         }
       }
     }
@@ -120,7 +120,87 @@ class OtherIncomeValidationServiceSpec extends BaseSpec with TableDrivenProperty
     "return a list of invalid and valid rows given spreadsheet with invalid data" in {
       val (errorResult, validResult) = new OtherIncomeValidationService().validate(OtherIncomeBadDataPath).futureValue
       val expectedResult = Some(
-        OtherIncomeData(None, Some(1234.00), Some(56.00), List(OtherIncome(11, "missing item number", LocalDate.of(2025, 1, 1), 1234.00, 56.00)))
+        OtherIncomeData(
+          None,
+          Some(BigDecimal("15662.00")),
+          Some(BigDecimal("640.00")),
+          List(
+            OtherIncome(Some(1), None, Some(LocalDate.of(2025, 1, 1)), Some(BigDecimal("1234.00")), Some(BigDecimal("56.00"))),
+            OtherIncome(Some(2), Some("missing date"), None, Some(BigDecimal("1234.00")), Some(BigDecimal("56.00"))),
+            OtherIncome(Some(3), Some("missing gross"), Some(LocalDate.of(2025, 1, 3)), None, Some(BigDecimal("56.00"))),
+            OtherIncome(Some(4), Some("missing deducted"), Some(LocalDate.of(2025, 1, 4)), Some(BigDecimal("1234.00")), None),
+            OtherIncome(
+              Some(5),
+              None,
+              Some(LocalDate.of(2025, 1, 5)),
+              Some(BigDecimal("1234.00")),
+              Some(BigDecimal("56.00")),
+              Map("payerName" -> ("invalid name " + "a" * 126))
+            ),
+            OtherIncome(
+              Some(6),
+              Some("invalid date"),
+              None,
+              Some(BigDecimal("1234.00")),
+              Some(BigDecimal("56.00")),
+              Map("paymentDate" -> "06/0")
+            ),
+            OtherIncome(
+              Some(7),
+              Some("future date"),
+              None,
+              Some(BigDecimal("1234.00")),
+              Some(BigDecimal("56.00")),
+              Map("paymentDate" -> "05/01/2027")
+            ),
+            OtherIncome(
+              Some(8),
+              Some("invalid gross"),
+              Some(LocalDate.of(2025, 1, 7)),
+              None,
+              Some(BigDecimal("56.00")),
+              Map("grossPayment" -> "test")
+            ),
+            OtherIncome(
+              Some(9),
+              Some("invalid deducted"),
+              Some(LocalDate.of(2025, 1, 8)),
+              Some(BigDecimal("1234.00")),
+              None,
+              Map("taxDeducted" -> "test")
+            ),
+            OtherIncome(
+              None,
+              Some("gross <= deducted"),
+              Some(LocalDate.of(2025, 1, 9)),
+              Some(BigDecimal("56.00")),
+              Some(BigDecimal("56.00"))
+            ),
+            OtherIncome(
+              Some(11),
+              Some("missing item number"),
+              Some(LocalDate.of(2025, 1, 1)),
+              Some(BigDecimal("1234.00")),
+              Some(BigDecimal("56.00"))
+            ),
+            OtherIncome(
+              None,
+              Some("Invalid item number"),
+              Some(LocalDate.of(2025, 1, 1)),
+              Some(BigDecimal("1234.00")),
+              Some(BigDecimal("56.00")),
+              Map("otherIncomeItem" -> "012")
+            ),
+            OtherIncome(
+              Some(13),
+              Some("invalid feb date"),
+              None,
+              Some(BigDecimal("4500.00")),
+              Some(BigDecimal("80.00")),
+              Map("paymentDate" -> "30/02/25")
+            )
+          )
+        )
       )
 
       errorResult shouldBe BadDataValidationErrors
@@ -130,7 +210,65 @@ class OtherIncomeValidationServiceSpec extends BaseSpec with TableDrivenProperty
     "return a list of invalid and valid rows given spreadsheet with invalid data and adjusted income is empty" in {
       val (errorResult, validResult) = new OtherIncomeValidationService().validate(OtherIncomeBadNoAdjIncDataPath).futureValue
       val expectedResult = Some(
-        OtherIncomeData(None, Some(1234.00), Some(56.00), List(OtherIncome(11, "missing item number", LocalDate.of(2025, 1, 1), 1234.00, 56.00)))
+        OtherIncomeData(
+          None,
+          Some(BigDecimal("9928.00")),
+          Some(BigDecimal("504.00")),
+          List(
+            OtherIncome(Some(1), None, Some(LocalDate.of(2025, 1, 1)), Some(BigDecimal("1234.00")), Some(BigDecimal("56.00"))),
+            OtherIncome(Some(2), Some("missing date"), None, Some(BigDecimal("1234.00")), Some(BigDecimal("56.00"))),
+            OtherIncome(Some(3), Some("missing gross"), Some(LocalDate.of(2025, 1, 3)), None, Some(BigDecimal("56.00"))),
+            OtherIncome(Some(4), Some("missing deducted"), Some(LocalDate.of(2025, 1, 4)), Some(BigDecimal("1234.00")), None),
+            OtherIncome(
+              Some(5),
+              None,
+              Some(LocalDate.of(2025, 1, 5)),
+              Some(BigDecimal("1234.00")),
+              Some(BigDecimal("56.00")),
+              Map("payerName" -> ("invalid name " + "a" * 126))
+            ),
+            OtherIncome(
+              Some(6),
+              Some("invalid date"),
+              None,
+              Some(BigDecimal("1234.00")),
+              Some(BigDecimal("56.00")),
+              Map("paymentDate" -> "06/0")
+            ),
+            OtherIncome(
+              Some(7),
+              Some("future date"),
+              None,
+              Some(BigDecimal("1234.00")),
+              Some(BigDecimal("56.00")),
+              Map("paymentDate" -> "05/01/2027")
+            ),
+            OtherIncome(
+              Some(8),
+              Some("invalid gross"),
+              Some(LocalDate.of(2025, 1, 7)),
+              None,
+              Some(BigDecimal("56.00")),
+              Map("grossPayment" -> "test")
+            ),
+            OtherIncome(
+              Some(9),
+              Some("invalid deducted"),
+              Some(LocalDate.of(2025, 1, 8)),
+              Some(BigDecimal("1234.00")),
+              None,
+              Map("taxDeducted" -> "test")
+            ),
+            OtherIncome(
+              None,
+              Some("gross <= deducted"),
+              Some(LocalDate.of(2025, 1, 9)),
+              Some(BigDecimal("56.00")),
+              Some(BigDecimal("56.00"))
+            ),
+            OtherIncome(Some(11), Some("missing item number"), Some(LocalDate.of(2025, 1, 1)), Some(BigDecimal("1234.00")), Some(BigDecimal("56.00")))
+          )
+        )
       )
 
       errorResult shouldBe BadDataValidationErrorsNoAdjInc
@@ -170,7 +308,8 @@ class OtherIncomeValidationServiceSpec extends BaseSpec with TableDrivenProperty
 
         withClue(s"$date: ") {
           errorRows should contain(ValidationError("paymentDate[0]", "validationService.otherIncome.message.8"))
-          validRows shouldBe empty
+          validRows.map(_.paymentDate) shouldBe List(None)
+          validRows.map(_.enteredValues.get("paymentDate")) shouldBe List(Some(date))
         }
       }
     }
@@ -212,7 +351,8 @@ class OtherIncomeValidationServiceSpec extends BaseSpec with TableDrivenProperty
         )
 
         errorRows should contain(ValidationError("payerName[0]", "validationService.otherIncome.message.5"))
-        validRows shouldBe empty
+        validRows.map(_.payerName) shouldBe List(None)
+        validRows.map(_.enteredValues.get("payerName")) shouldBe List(Some(name.trim))
       }
     }
   }

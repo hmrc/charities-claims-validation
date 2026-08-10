@@ -136,12 +136,12 @@ class ClaimValidationStatusSpec extends AnyWordSpec with Matchers:
             Some(BigDecimal("3500.00")),
             communityBuildings = List(
               CommunityBuilding(
-                communityBuildingItem = 1,
-                buildingName = "St Mary's Church",
-                firstLineOfAddress = "123 Church Street",
-                postcode = "SW1A 1AA",
-                taxYear1 = 2023,
-                amountYear1 = BigDecimal("1500.00"),
+                communityBuildingItem = Some(1),
+                buildingName = Some("St Mary's Church"),
+                firstLineOfAddress = Some("123 Church Street"),
+                postcode = Some("SW1A 1AA"),
+                taxYear1 = Some(2023),
+                amountYear1 = Some(BigDecimal("1500.00")),
                 taxYear2 = Some(2024),
                 amountYear2 = Some(BigDecimal("2000.00"))
               )
@@ -160,16 +160,16 @@ class ClaimValidationStatusSpec extends AnyWordSpec with Matchers:
       validated.communityBuildingsData shouldBe defined
       validated.communityBuildingsData.get.totalOfAllAmounts shouldBe defined
       validated.communityBuildingsData.get.communityBuildings should have size 1
-      validated.communityBuildingsData.get.communityBuildings.head.buildingName shouldBe "St Mary's Church"
-      validated.communityBuildingsData.get.communityBuildings.head.taxYear1 shouldBe 2023
+      validated.communityBuildingsData.get.communityBuildings.head.buildingName shouldBe Some("St Mary's Church")
+      validated.communityBuildingsData.get.communityBuildings.head.taxYear1 shouldBe Some(2023)
 
     "serialize and deserialize ValidatedStatus with Connected Charities data" in:
       val connectedData = ConnectedCharitiesData(
         List(
           Charity(
-            charityItem = 1,
-            charityName = "Charity of the 501st Legion",
-            charityReference = "CW501"
+            charityItem = Some(1),
+            charityName = Some("Charity of the 501st Legion"),
+            charityReference = Some("CW501")
           )
         )
       )

@@ -126,6 +126,9 @@ object CommonFileValidation {
     else strBeforeNormalisingSpacing
   }
 
+  def discarded(validatedValue: Option[?], raw: String): Option[String] =
+    Option.when(validatedValue.isEmpty)(raw.trim).filter(_.nonEmpty)
+
   private def isOdsMimeType(up: UpscanSuccessRequest): Boolean =
     up.uploadDetails.fileMimeType.equals(OdsMimeType)
 

@@ -31,11 +31,12 @@ final case class OtherIncomeData(
 )
 
 final case class OtherIncome(
-  otherIncomeItem: Int,
-  payerName: String,
-  paymentDate: LocalDate,
-  grossPayment: BigDecimal,
-  taxDeducted: BigDecimal
+  otherIncomeItem: Option[Int],
+  payerName: Option[String],
+  paymentDate: Option[LocalDate],
+  grossPayment: Option[BigDecimal],
+  taxDeducted: Option[BigDecimal],
+  enteredValues: Map[String, String] = Map.empty
 ) extends DocumentRow
 
 object OtherIncome {
@@ -44,7 +45,15 @@ object OtherIncome {
     play.api.libs.json.Writes.DefaultLocalDateWrites
   )
 
-  implicit val format: OFormat[OtherIncome] = Json.format[OtherIncome]
+  private val derivedFormat: OFormat[OtherIncome] = Json.format[OtherIncome]
+
+  implicit val format: OFormat[OtherIncome] = OFormat(
+    derivedFormat,
+    OWrites { (otherIncome: OtherIncome) =>
+      val json = derivedFormat.writes(otherIncome)
+      if otherIncome.enteredValues.isEmpty then json - "enteredValues" else json
+    }
+  )
 }
 
 object OtherIncomeData {

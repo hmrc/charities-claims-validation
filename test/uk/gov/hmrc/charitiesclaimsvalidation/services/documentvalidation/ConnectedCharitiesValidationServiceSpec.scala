@@ -28,9 +28,9 @@ class ConnectedCharitiesValidationServiceSpec extends BaseSpec {
 
   val expectedResultForMultipleSpacesAndNewLines = ConnectedCharitiesData(charities =
     List(
-      Charity(charityItem = 1, charityName = "Charity of the 501st Legion", charityReference = "CW501"),
-      Charity(charityItem = 2, charityName = "Save the Children --- UK Trust", charityReference = "CW789"),
-      Charity(charityItem = 200, charityName = "Test Charity", charityReference = "CW800")
+      Charity(charityItem = Some(1), charityName = Some("Charity of the 501st Legion"), charityReference = Some("CW501")),
+      Charity(charityItem = Some(2), charityName = Some("Save the Children --- UK Trust"), charityReference = Some("CW789")),
+      Charity(charityItem = Some(200), charityName = Some("Test Charity"), charityReference = Some("CW800"))
     )
   )
 
@@ -39,8 +39,8 @@ class ConnectedCharitiesValidationServiceSpec extends BaseSpec {
       val (errorResult, validResult) = new ConnectedCharitiesValidationService().validate(connectedCharitiesGoodDataPath).futureValue
       val expectedResult = ConnectedCharitiesData(charities =
         List(
-          Charity(charityItem = 1, charityName = "Charity of the 501st Legion", charityReference = "CW501"),
-          Charity(charityItem = 200, charityName = "Test Charity", charityReference = "CW800")
+          Charity(charityItem = Some(1), charityName = Some("Charity of the 501st Legion"), charityReference = Some("CW501")),
+          Charity(charityItem = Some(200), charityName = Some("Test Charity"), charityReference = Some("CW800"))
         )
       )
 
@@ -52,12 +52,12 @@ class ConnectedCharitiesValidationServiceSpec extends BaseSpec {
       val (errorResult, validResult) = new ConnectedCharitiesValidationService().validate(connectedCharitiesGoodDataWithAttributesPath).futureValue
       val expectedResult = ConnectedCharitiesData(charities =
         List(
-          Charity(charityItem = 1, charityName = "Save the Children --- UK Trust", charityReference = "CW789"),
-          Charity(charityItem = 4, charityName = "Test Charity", charityReference = "CW123"),
-          Charity(charityItem = 4, charityName = "Test Charity", charityReference = "CW123"),
-          Charity(charityItem = 4, charityName = "Test Charity", charityReference = "CW123"),
-          Charity(charityItem = 4, charityName = "Test Charity", charityReference = "CW123"),
-          Charity(charityItem = 200, charityName = "200th Charity", charityReference = "CW777")
+          Charity(charityItem = Some(1), charityName = Some("Save the Children --- UK Trust"), charityReference = Some("CW789")),
+          Charity(charityItem = Some(4), charityName = Some("Test Charity"), charityReference = Some("CW123")),
+          Charity(charityItem = Some(4), charityName = Some("Test Charity"), charityReference = Some("CW123")),
+          Charity(charityItem = Some(4), charityName = Some("Test Charity"), charityReference = Some("CW123")),
+          Charity(charityItem = Some(4), charityName = Some("Test Charity"), charityReference = Some("CW123")),
+          Charity(charityItem = Some(200), charityName = Some("200th Charity"), charityReference = Some("CW777"))
         )
       )
 
@@ -86,9 +86,37 @@ class ConnectedCharitiesValidationServiceSpec extends BaseSpec {
       val expectedResult = ConnectedCharitiesData(charities =
         List(
           Charity(
-            charityItem = 6,
-            charityName = "Test Charity",
-            charityReference = "AB134"
+            charityItem = Some(1),
+            charityName = None,
+            charityReference = Some("CW501")
+          ),
+          Charity(
+            charityItem = Some(2),
+            charityName = Some("Charity of the 501st Legion"),
+            charityReference = None
+          ),
+          Charity(
+            charityItem = Some(3),
+            charityName = None,
+            charityReference = Some("CW501"),
+            enteredValues = Map("charityName" -> "a" * 509)
+          ),
+          Charity(
+            charityItem = Some(4),
+            charityName = Some("Charity of the 501st Legion"),
+            charityReference = None,
+            enteredValues = Map("charityReference" -> "*&^%$\u00A3\"!")
+          ),
+          Charity(
+            charityItem = None,
+            charityName = Some("Charity of the 501st Legion"),
+            charityReference = Some("CW501"),
+            enteredValues = Map("charityItem" -> "555555")
+          ),
+          Charity(
+            charityItem = Some(6),
+            charityName = Some("Test Charity"),
+            charityReference = Some("AB134")
           )
         )
       )
@@ -149,7 +177,8 @@ class ConnectedCharitiesValidationServiceSpec extends BaseSpec {
           )
 
           errorRows should contain(itemError)
-          validRows shouldBe empty
+          validRows.map(_.charityItem) shouldBe List(None)
+          validRows.map(_.enteredValues.get("charityItem")) shouldBe List(Option(item.trim).filter(_.nonEmpty))
         }
       }
     }
@@ -184,7 +213,8 @@ class ConnectedCharitiesValidationServiceSpec extends BaseSpec {
           )
 
           errorRows should contain(charityNameMissingError)
-          validRows shouldBe empty
+          validRows.map(_.charityName) shouldBe List(None)
+          validRows.flatMap(_.enteredValues.get("charityName")) shouldBe empty
         }
       }
 
@@ -195,7 +225,8 @@ class ConnectedCharitiesValidationServiceSpec extends BaseSpec {
           )
 
           errorRows should contain(charityNameInvalidError)
-          validRows shouldBe empty
+          validRows.map(_.charityName) shouldBe List(None)
+          validRows.map(_.enteredValues.get("charityName")) shouldBe List(Some(name))
         }
       }
 
@@ -214,7 +245,8 @@ class ConnectedCharitiesValidationServiceSpec extends BaseSpec {
           )
 
           errorRows should contain(charityNameMissingError)
-          validRows shouldBe empty
+          validRows.map(_.charityName) shouldBe List(None)
+          validRows.map(_.enteredValues.get("charityName")) shouldBe List(Some(name.trim))
         }
       }
     }
@@ -249,7 +281,8 @@ class ConnectedCharitiesValidationServiceSpec extends BaseSpec {
           )
 
           errorRows should contain(charityReferenceMissingError)
-          validRows shouldBe empty
+          validRows.map(_.charityReference) shouldBe List(None)
+          validRows.flatMap(_.enteredValues.get("charityReference")) shouldBe empty
         }
       }
 
@@ -260,7 +293,8 @@ class ConnectedCharitiesValidationServiceSpec extends BaseSpec {
           )
 
           errorRows should contain(charityReferenceInvalidError)
-          validRows shouldBe empty
+          validRows.map(_.charityReference) shouldBe List(None)
+          validRows.map(_.enteredValues.get("charityReference")) shouldBe List(Some(reference))
         }
       }
     }
@@ -281,7 +315,9 @@ class ConnectedCharitiesValidationServiceSpec extends BaseSpec {
           "validationService.connectedCharities.message.6"
         )
       )
-      validRows shouldBe empty
+      validRows.map(_.charityName) shouldBe List(None)
+      validRows.map(_.charityReference) shouldBe List(None)
+      validRows.map(_.enteredValues) shouldBe List(Map("charityReference" -> "Invalid_ref"))
     }
 
     "ensure non western chars are removed from inputs like the AS IS system" in {

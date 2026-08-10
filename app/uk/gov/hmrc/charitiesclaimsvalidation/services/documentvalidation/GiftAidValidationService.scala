@@ -23,7 +23,7 @@ import cats.implicits.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NoRowsFoundException, NotAnOdsFileException}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.GiftAidDonationRow
-import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
+import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{discarded, removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
 
 import java.io.FileNotFoundException
 import java.time.LocalDate
@@ -492,9 +492,6 @@ object GiftAidValidationService {
       }
     }
   }
-
-  private def discarded(validatedValue: Option[?], raw: String): Option[String] =
-    Option.when(validatedValue.isEmpty)(raw.trim).filter(_.nonEmpty)
 
   private def invalid(field: String, msg: String): V[Nothing] =
     ValidationError(field, msg).invalidNel

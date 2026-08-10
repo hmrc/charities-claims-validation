@@ -297,6 +297,135 @@ class GetUploadResultISpec
     )
   }
 
+  test("GET upload result returns the values that were entered for other income fields that failed validation") {
+    stubAuthenticate()
+
+    val otherIncome = OtherIncome(
+      otherIncomeItem = Some(1),
+      payerName = None,
+      paymentDate = Some(java.time.LocalDate.of(2025, 1, 1)),
+      grossPayment = None,
+      taxDeducted = Some(BigDecimal("56.00")),
+      enteredValues = Map("payerName" -> "a" * 41, "grossPayment" -> "test")
+    )
+
+    val status = ValidationFailedStatus(
+      claimId = claimId,
+      reference = reference,
+      validationType = ValidationType.OtherIncome,
+      otherIncomeData = Some(OtherIncomeData(None, None, None, List(otherIncome))),
+      errors = Seq(ValidationError("payerName[0]", "validationService.otherIncome.message.6")),
+      createdAt = Instant.now(),
+      updatedAt = Instant.now()
+    )
+    await(claimValidationRepository.insert(status))
+
+    val httpClient = app.injector.instanceOf[HttpClientV2]
+    val url        = routes.ClaimReferenceController.getUploadResult(claimId, reference).url
+    val request    = httpClient.get(URI.create(s"http://localhost:$port$url").toURL)
+    val result     = await(request.execute[HttpResponse])
+
+    result.status shouldBe 200
+
+    val returned = (result.json \ "otherIncomeData" \ "otherIncomes")(0)
+
+    returned shouldBe Json.obj(
+      "otherIncomeItem" -> 1,
+      "paymentDate"     -> "2025-01-01",
+      "taxDeducted"     -> "56.00",
+      "enteredValues" -> Json.obj(
+        "payerName"    -> "a" * 41,
+        "grossPayment" -> "test"
+      )
+    )
+  }
+
+  test("GET upload result returns the values that were entered for community building fields that failed validation") {
+    stubAuthenticate()
+
+    val building = CommunityBuilding(
+      communityBuildingItem = Some(1),
+      buildingName = Some("The Vault"),
+      firstLineOfAddress = None,
+      postcode = None,
+      taxYear1 = Some(2023),
+      amountYear1 = Some(BigDecimal("1500.00")),
+      taxYear2 = None,
+      amountYear2 = None,
+      enteredValues = Map("firstLineOfAddress" -> "a" * 41, "postcode" -> "not a postcode")
+    )
+
+    val status = ValidationFailedStatus(
+      claimId = claimId,
+      reference = reference,
+      validationType = ValidationType.CommunityBuildings,
+      communityBuildingsData = Some(CommunityBuildingData(Some(BigDecimal("1500.00")), List(building))),
+      errors = Seq(ValidationError("postcode[0]", "validationService.communityBuildings.message.8")),
+      createdAt = Instant.now(),
+      updatedAt = Instant.now()
+    )
+    await(claimValidationRepository.insert(status))
+
+    val httpClient = app.injector.instanceOf[HttpClientV2]
+    val url        = routes.ClaimReferenceController.getUploadResult(claimId, reference).url
+    val request    = httpClient.get(URI.create(s"http://localhost:$port$url").toURL)
+    val result     = await(request.execute[HttpResponse])
+
+    result.status shouldBe 200
+
+    val returned = (result.json \ "communityBuildingsData" \ "communityBuildings")(0)
+
+    returned shouldBe Json.obj(
+      "communityBuildingItem" -> 1,
+      "buildingName"          -> "The Vault",
+      "taxYear1"              -> 2023,
+      "amountYear1"           -> "1500.00",
+      "enteredValues" -> Json.obj(
+        "firstLineOfAddress" -> "a" * 41,
+        "postcode"           -> "not a postcode"
+      )
+    )
+  }
+
+  test("GET upload result returns the values that were entered for connected charity fields that failed validation") {
+    stubAuthenticate()
+
+    val charity = Charity(
+      charityItem = Some(1),
+      charityName = None,
+      charityReference = None,
+      enteredValues = Map("charityName" -> "a" * 161, "charityReference" -> "abc123")
+    )
+
+    val status = ValidationFailedStatus(
+      claimId = claimId,
+      reference = reference,
+      validationType = ValidationType.ConnectedCharities,
+      connectedCharitiesData = Some(ConnectedCharitiesData(List(charity))),
+      errors = Seq(ValidationError("charityReference[0]", "validationService.connectedCharities.message.6")),
+      createdAt = Instant.now(),
+      updatedAt = Instant.now()
+    )
+    await(claimValidationRepository.insert(status))
+
+    val httpClient = app.injector.instanceOf[HttpClientV2]
+    val url        = routes.ClaimReferenceController.getUploadResult(claimId, reference).url
+    val request    = httpClient.get(URI.create(s"http://localhost:$port$url").toURL)
+    val result     = await(request.execute[HttpResponse])
+
+    result.status shouldBe 200
+
+    val returned = (result.json \ "connectedCharitiesData" \ "charities")(0)
+
+    returned shouldBe Json.obj(
+      "charityItem" -> 1,
+      "enteredValues" -> Json.obj(
+        "charityName"      -> "a" * 161,
+        "charityReference" -> "abc123"
+      )
+    )
+  }
+
   test("GET upload result returns 404 when reference does not exist") {
     stubAuthenticate()
 
