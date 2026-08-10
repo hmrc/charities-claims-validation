@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.charitiesclaimsvalidation.models.domain
 
-import play.api.libs.json.{Json, OFormat, OWrites}
-import uk.gov.hmrc.charitiesclaimsvalidation.models.formats.JsonImplicits.bigDecimalWrites
+import play.api.libs.json.{Json, OFormat}
+import uk.gov.hmrc.charitiesclaimsvalidation.models.formats.JsonImplicits.{bigDecimalWrites, omittingEmptyEnteredValues}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.DocumentRow
 
 final case class CommunityBuildingData(
@@ -38,15 +38,7 @@ final case class CommunityBuilding(
 ) extends DocumentRow
 
 object CommunityBuilding {
-  private val derivedFormat: OFormat[CommunityBuilding] = Json.format[CommunityBuilding]
-
-  implicit val format: OFormat[CommunityBuilding] = OFormat(
-    derivedFormat,
-    OWrites { (building: CommunityBuilding) =>
-      val json = derivedFormat.writes(building)
-      if building.enteredValues.isEmpty then json - "enteredValues" else json
-    }
-  )
+  implicit val format: OFormat[CommunityBuilding] = omittingEmptyEnteredValues(Json.format[CommunityBuilding])(_.enteredValues)
 }
 
 object CommunityBuildingData {

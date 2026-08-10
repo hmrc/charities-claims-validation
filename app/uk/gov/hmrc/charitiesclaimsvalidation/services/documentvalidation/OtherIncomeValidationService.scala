@@ -24,7 +24,7 @@ import uk.gov.hmrc.charitiesclaimsvalidation.models.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NoRowsFoundException, NotAnOdsFileException}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{OtherIncome, OtherIncomeData, ValidationError, ValidationType}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.OtherIncomeRow
-import CommonFileValidation.{discarded, removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
+import CommonFileValidation.{discarded, enteredValuesOf, errorsOf, removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
 
 import java.io.FileNotFoundException
 import java.time.LocalDate
@@ -51,8 +51,8 @@ class OtherIncomeValidationService @Inject() ()(using ioRuntime: IORuntime) exte
           otherIncomeRowWithIndex = rawOtherIncomeRowsWithIndex.map { case (idx, row) => OtherIncomeValidationService.OtherRowWithIndex(idx, row) }
           (rowErrors, otherIncomeRows) = OtherIncomeValidationService.validateRows(otherIncomeRowWithIndex, today = LocalDate.now)
           validatedAdjustment          = OtherIncomeValidationService.validateAdjustment(adjustmentForOtherIncomeCell)
-          totalGrossPayments           = Some(otherIncomeRows.flatMap(_.grossPayment).fold(BigDecimal(0))(_ + _))
-          totalTaxDeducted             = Some(otherIncomeRows.flatMap(_.taxDeducted).fold(BigDecimal(0))(_ + _))
+          totalGrossPayments           = Some(otherIncomeRows.flatMap(_.grossPayment).sum)
+          totalTaxDeducted             = Some(otherIncomeRows.flatMap(_.taxDeducted).sum)
         } yield validatedAdjustment match {
           case Left(validationError) =>
             (validationError :: rowErrors, OtherIncomeData(None, totalGrossPayments, totalTaxDeducted, otherIncomeRows).some)
@@ -100,9 +100,9 @@ object OtherIncomeValidationService {
     today: LocalDate
   ): (List[ValidationError], List[OtherIncome]) = {
 
-    val validated = inputRows.map(validateRow(_, today))
+    val (rowErrors, otherIncomes) = inputRows.map(validateRow(_, today)).unzip
 
-    (validated.flatMap(_._1), validated.map(_._2))
+    (rowErrors.flatten, otherIncomes)
   }
 
   private def validateAdjustment(adjustmentOtherIncomeCell: String): Either[ValidationError, Option[BigDecimal]] = {
@@ -155,30 +155,23 @@ object OtherIncomeValidationService {
           ().validNel
       }
 
-    val errors = List[V[Any]](
-      itemV,
-      nameV,
-      dateV,
-      grossV,
-      taxV,
-      taxLessThanGrossV
-    ).collect { case Validated.Invalid(errs) => errs.toList }.flatten
+    val errors = errorsOf(itemV, nameV, dateV, grossV, taxV, taxLessThanGrossV)
 
-    val enteredValues = List(
+    val enteredValues = enteredValuesOf(
       "otherIncomeItem" -> discarded(itemV.toOption, row.otherIncomeItem),
       "payerName"       -> discarded(nameV.toOption, row.payerName),
       "paymentDate"     -> discarded(dateV.toOption, row.paymentDate),
       "grossPayment"    -> discarded(grossV.toOption, row.grossPayment),
       "taxDeducted"     -> discarded(taxV.toOption, row.taxDeducted)
-    ).collect { case (field, Some(value)) => field -> value }.toMap
+    )
 
     val otherIncome = OtherIncome(
-      itemV.toOption,
-      nameV.toOption,
-      dateV.toOption,
-      grossV.toOption,
-      taxV.toOption,
-      enteredValues
+      otherIncomeItem = itemV.toOption,
+      payerName = nameV.toOption,
+      paymentDate = dateV.toOption,
+      grossPayment = grossV.toOption,
+      taxDeducted = taxV.toOption,
+      enteredValues = enteredValues
     )
 
     (errors, otherIncome)

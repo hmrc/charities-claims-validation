@@ -24,7 +24,7 @@ import uk.gov.hmrc.charitiesclaimsvalidation.models.{domain, *}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{CommunityBuilding, CommunityBuildingData, ValidationError, ValidationType}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NoRowsFoundException, NotAnOdsFileException}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.CommunityBuildingRow
-import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{discarded, removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
+import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{discarded, enteredValuesOf, errorsOf, removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
 
 import java.io.FileNotFoundException
 import java.time.LocalDateTime
@@ -100,10 +100,10 @@ object CommunityBuildingValidationService {
   def validateRows(inputRows: List[BuildingRowWithIndex], now: LocalDateTime): (List[ValidationError], List[ValidatedBuildingWithIndex]) = {
     val validated = inputRows.map(validateRow(_, now))
 
-    (validated.flatMap(_._1), validated.map(_._2))
+    (validated.flatMap(_.errors), validated)
   }
 
-  private def validateRow(buildingRowWithIndex: BuildingRowWithIndex, now: LocalDateTime): (List[ValidationError], ValidatedBuildingWithIndex) = {
+  private def validateRow(buildingRowWithIndex: BuildingRowWithIndex, now: LocalDateTime): ValidatedBuildingWithIndex = {
     import buildingRowWithIndex.*
 
     val errorIndex = index - CommunityBuildingRow.layout.rowRange.start
@@ -118,30 +118,24 @@ object CommunityBuildingValidationService {
 
     val taxYear2ConditionalV = validateTaxYear2Conditional(row.taxYear1, row.taxYear2, row.amount2, errorIndex, now)
 
-    val errors = List[V[Any]](
-      itemV,
-      nameV,
-      addressV,
-      postcodeV,
-      taxYear1V,
-      amount1V,
-      taxYear2ConditionalV
-    ).collect { case Validated.Invalid(errs) => errs.toList }.flatten
+    val errors = errorsOf(itemV, nameV, addressV, postcodeV, taxYear1V, amount1V, taxYear2ConditionalV)
 
-    val enteredValues = List(
+    val taxYear2Result = taxYear2ConditionalV.toOption
+
+    val enteredValues = enteredValuesOf(
       "communityBuildingItem" -> discarded(itemV.toOption, row.item),
       "buildingName"          -> discarded(nameV.toOption, row.buildingName),
       "firstLineOfAddress"    -> discarded(addressV.toOption, row.firstLineOfAddress),
       "postcode"              -> discarded(postcodeV.toOption, row.postcode),
       "taxYear1"              -> discarded(taxYear1V.toOption, row.taxYear1),
       "amountYear1"           -> discarded(amount1V.toOption, row.amount1),
-      "taxYear2"              -> discarded(taxYear2ConditionalV.toOption, row.taxYear2),
-      "amountYear2"           -> discarded(taxYear2ConditionalV.toOption, row.amount2)
-    ).collect { case (field, Some(value)) => field -> value }.toMap
+      "taxYear2"              -> discarded(taxYear2Result, row.taxYear2),
+      "amountYear2"           -> discarded(taxYear2Result, row.amount2)
+    )
 
-    val year2Opt = taxYear2ConditionalV.toOption.flatten
+    val year2Opt = taxYear2Result.flatten
 
-    val validatedBuilding = ValidatedBuildingWithIndex(
+    ValidatedBuildingWithIndex(
       errorIndex = errorIndex,
       building = CommunityBuilding(
         communityBuildingItem = itemV.toOption,
@@ -154,10 +148,8 @@ object CommunityBuildingValidationService {
         amountYear2 = year2Opt.map(_._2),
         enteredValues = enteredValues
       ),
-      isValid = errors.isEmpty
+      errors = errors
     )
-
-    (errors, validatedBuilding)
   }
 
   private def validateItem(raw: String, index: Int): V[Int] = {
@@ -407,79 +399,68 @@ object CommunityBuildingValidationService {
   }
 
   def validateCrossField(buildings: List[ValidatedBuildingWithIndex]): List[ValidationError] = {
-    val buildingGroups = buildings.filter(_.isValid).groupBy { vb =>
-      normalizeBuilding(
-        vb.building.buildingName.getOrElse(""),
-        vb.building.firstLineOfAddress.getOrElse(""),
-        vb.building.postcode.getOrElse("")
-      )
-    }
+    val buildingGroups = buildings
+      .filter(_.errors.isEmpty)
+      .flatMap { vb =>
+        for {
+          name     <- vb.building.buildingName
+          address  <- vb.building.firstLineOfAddress
+          postcode <- vb.building.postcode
+        } yield normalizeBuilding(name, address, postcode) -> vb
+      }
+      .groupMap(_._1)(_._2)
 
     buildingGroups.flatMap { case (_, buildingsForSameBuilding) =>
-      // Track tax years with their associated error indices and item numbers
-      val taxYearsWithIndices: List[(Int, Int, Int)] = buildingsForSameBuilding.flatMap { vb =>
-        val item       = vb.building.communityBuildingItem.getOrElse(0)
-        val year1Entry = vb.building.taxYear1.map(y => (y, vb.errorIndex, item))
-        val year2Entry = vb.building.taxYear2.map(y => (y, vb.errorIndex, item))
+      val taxYearsWithIndices: List[(Int, Int)] = buildingsForSameBuilding.flatMap { vb =>
+        val year1Entry = vb.building.taxYear1.map(y => (y, vb.errorIndex))
+        val year2Entry = vb.building.taxYear2.map(y => (y, vb.errorIndex))
         year1Entry.toList ++ year2Entry.toList
       }
 
-      // Find duplicate tax years and report the item that caused the duplicate (the later occurrence)
-      val duplicateErrors = findDuplicateTaxYearErrors(taxYearsWithIndices)
-
-      // Find items that exceed the 3 tax year limit
-      val limitErrors = findTaxYearLimitErrors(taxYearsWithIndices)
-
-      duplicateErrors ++ limitErrors
+      findDuplicateTaxYearErrors(taxYearsWithIndices) ++ findTaxYearLimitErrors(taxYearsWithIndices)
     }.toList
   }
 
   private def findDuplicateTaxYearErrors(
-    taxYearsWithIndices: List[(Int, Int, Int)]
+    taxYearsWithIndices: List[(Int, Int)]
   ): List[ValidationError] = {
-    val seenTaxYears   = scala.collection.mutable.Set[Int]()
-    val duplicateItems = scala.collection.mutable.ListBuffer[(Int, Int)]() // (errorIndex, itemId)
+    val seenTaxYears     = scala.collection.mutable.Set[Int]()
+    val duplicateIndices = scala.collection.mutable.ListBuffer[Int]()
 
-    taxYearsWithIndices.foreach { case (taxYear, errorIndex, itemId) =>
+    taxYearsWithIndices.foreach { case (taxYear, errorIndex) =>
       if seenTaxYears.contains(taxYear) then {
-        duplicateItems += errorIndex -> itemId
+        duplicateIndices += errorIndex
       } else {
         seenTaxYears += taxYear
       }
     }
 
-    duplicateItems.distinctBy(_._1).toList.map { case (errorIndex, itemId) =>
-      ValidationError(
-        s"building[$errorIndex]",
-        s"validationService.communityBuildings.message.21"
-      )
-    }
+    duplicateIndices.distinct.toList.map(taxYearLimitError)
   }
 
   private def findTaxYearLimitErrors(
-    taxYearsWithIndices: List[(Int, Int, Int)]
+    taxYearsWithIndices: List[(Int, Int)]
   ): List[ValidationError] = {
-    // Track unique years in the order they first appear
-    val seenYears           = scala.collection.mutable.LinkedHashSet[Int]()
-    val itemsExceedingLimit = scala.collection.mutable.ListBuffer[(Int, Int)]() // (errorIndex, itemId)
+    val seenYears             = scala.collection.mutable.LinkedHashSet[Int]()
+    val indicesExceedingLimit = scala.collection.mutable.ListBuffer[Int]()
 
-    taxYearsWithIndices.foreach { case (taxYear, errorIndex, itemId) =>
+    taxYearsWithIndices.foreach { case (taxYear, errorIndex) =>
       if !seenYears.contains(taxYear) then {
         seenYears += taxYear
-        // If this is the 4th+ unique year, the item that introduced it exceeds the limit
         if seenYears.size > 3 then {
-          itemsExceedingLimit += errorIndex -> itemId
+          indicesExceedingLimit += errorIndex
         }
       }
     }
 
-    itemsExceedingLimit.distinctBy(_._1).toList.map { case (errorIndex, itemId) =>
-      ValidationError(
-        s"building[$errorIndex]",
-        s"validationService.communityBuildings.message.21"
-      )
-    }
+    indicesExceedingLimit.distinct.toList.map(taxYearLimitError)
   }
+
+  private def taxYearLimitError(errorIndex: Int): ValidationError =
+    ValidationError(
+      s"building[$errorIndex]",
+      "validationService.communityBuildings.message.21"
+    )
 
   private def normalizeBuilding(buildingName: String, address: String, postcode: String): String = {
     val normName    = buildingName.trim.toLowerCase.replaceAll("\\s+", " ")
@@ -505,6 +486,6 @@ object CommunityBuildingValidationService {
 
   final case class BuildingRowWithIndex(index: Int, row: CommunityBuildingRow)
 
-  final case class ValidatedBuildingWithIndex(errorIndex: Int, building: CommunityBuilding, isValid: Boolean = true)
+  final case class ValidatedBuildingWithIndex(errorIndex: Int, building: CommunityBuilding, errors: List[ValidationError] = Nil)
 
 }

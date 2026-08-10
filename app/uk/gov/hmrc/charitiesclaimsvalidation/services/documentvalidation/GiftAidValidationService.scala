@@ -23,7 +23,7 @@ import cats.implicits.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NoRowsFoundException, NotAnOdsFileException}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.GiftAidDonationRow
-import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{discarded, removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
+import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{discarded, enteredValuesOf, errorsOf, removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
 
 import java.io.FileNotFoundException
 import java.time.LocalDate
@@ -121,9 +121,9 @@ object GiftAidValidationService {
     inputRows: List[GiftAidDonationRowWithIndex]
   ): (List[ValidationError], List[GiftAidDonation]) = {
 
-    val validated = inputRows.map(validateRow)
+    val (rowErrors, donations) = inputRows.map(validateRow).unzip
 
-    (validated.flatMap(_._1), validated.map(_._2))
+    (rowErrors.flatten, donations)
   }
 
   private def validateRow(giftAidDonationRowWithIndex: GiftAidDonationRowWithIndex): (List[ValidationError], GiftAidDonation) = {
@@ -143,7 +143,7 @@ object GiftAidValidationService {
     val dateV                   = validateDate(row.donationDate, index, LocalDate.now)
     val amountV                 = validateMoney(row.donationAmount, index, isAggregated)
 
-    val errors = List[V[Any]](
+    val errors = errorsOf(
       itemV,
       aggregateDonationRulesV,
       titleV,
@@ -155,9 +155,9 @@ object GiftAidValidationService {
       sponsoredEventV,
       dateV,
       amountV
-    ).collect { case Validated.Invalid(errs) => errs.toList }.flatten
+    )
 
-    val enteredValues = List(
+    val enteredValues = enteredValuesOf(
       "donationItem"        -> discarded(itemV.toOption, row.donationItem),
       "donorTitle"          -> discarded(titleV.toOption.flatten, row.donorTitle),
       "donorFirstName"      -> discarded(firstNameV.toOption.flatten, row.donorFirstName),
@@ -168,7 +168,7 @@ object GiftAidValidationService {
       "sponsoredEvent"      -> discarded(sponsoredEventV.toOption.flatten, row.sponsoredEvent),
       "donationDate"        -> discarded(dateV.toOption, row.donationDate),
       "donationAmount"      -> discarded(amountV.toOption, row.donationAmount)
-    ).collect { case (field, Some(value)) => field -> value }.toMap
+    )
 
     val donation = GiftAidDonation(
       itemV.toOption,

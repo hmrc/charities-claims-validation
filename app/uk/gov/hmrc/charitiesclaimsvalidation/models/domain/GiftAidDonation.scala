@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.charitiesclaimsvalidation.models.domain
 
-import play.api.libs.json.{Format, Json, OFormat, OWrites, Reads}
-import uk.gov.hmrc.charitiesclaimsvalidation.models.formats.JsonImplicits.bigDecimalWrites
+import play.api.libs.json.{Format, Json, OFormat, Reads}
+import uk.gov.hmrc.charitiesclaimsvalidation.models.formats.JsonImplicits.{bigDecimalWrites, omittingEmptyEnteredValues}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.DocumentRow
 
 import java.time.LocalDate
@@ -43,13 +43,5 @@ object GiftAidDonation {
     play.api.libs.json.Writes.DefaultLocalDateWrites
   )
 
-  private val derivedFormat: OFormat[GiftAidDonation] = Json.format[GiftAidDonation]
-
-  implicit val format: OFormat[GiftAidDonation] = OFormat(
-    derivedFormat,
-    OWrites { (donation: GiftAidDonation) =>
-      val json = derivedFormat.writes(donation)
-      if donation.enteredValues.isEmpty then json - "enteredValues" else json
-    }
-  )
+  implicit val format: OFormat[GiftAidDonation] = omittingEmptyEnteredValues(Json.format[GiftAidDonation])(_.enteredValues)
 }

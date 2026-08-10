@@ -23,7 +23,7 @@ import cats.implicits.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.ConnectedCharitiesRow
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NoRowsFoundException, NotAnOdsFileException}
-import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{discarded, removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
+import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonFileValidation.{discarded, enteredValuesOf, errorsOf, removeNonWesternCharacters, sheetNameIsDifferent, spreadsheetFileNotFound, spreadsheetUnexpectedError, verifySheetName}
 
 import java.io.FileNotFoundException
 import javax.inject.{Inject, Singleton}
@@ -88,9 +88,9 @@ object ConnectedCharitiesValidationService {
     inputRows: List[ConnectedCharitiesRowWithIndex]
   ): (List[ValidationError], List[Charity]) = {
 
-    val validated = inputRows.map(validateRow)
+    val (rowErrors, charities) = inputRows.map(validateRow).unzip
 
-    (validated.flatMap(_._1), validated.map(_._2))
+    (rowErrors.flatten, charities)
   }
 
   private def validateRow(connectedCharitiesRowWithIndex: ConnectedCharitiesRowWithIndex): (List[ValidationError], Charity) = {
@@ -103,23 +103,19 @@ object ConnectedCharitiesValidationService {
     val nameV      = validateName(row.charityName, errorIndex)
     val referenceV = validateReference(row.charityReference, errorIndex)
 
-    val errors = List[V[Any]](
-      itemV,
-      nameV,
-      referenceV
-    ).collect { case Validated.Invalid(errs) => errs.toList }.flatten
+    val errors = errorsOf(itemV, nameV, referenceV)
 
-    val enteredValues = List(
+    val enteredValues = enteredValuesOf(
       "charityItem"      -> discarded(itemV.toOption, row.connectedCharitiesItem),
       "charityName"      -> discarded(nameV.toOption, row.charityName),
       "charityReference" -> discarded(referenceV.toOption, row.charityReference)
-    ).collect { case (field, Some(value)) => field -> value }.toMap
+    )
 
     val charity = Charity(
-      itemV.toOption,
-      nameV.toOption,
-      referenceV.toOption,
-      enteredValues
+      charityItem = itemV.toOption,
+      charityName = nameV.toOption,
+      charityReference = referenceV.toOption,
+      enteredValues = enteredValues
     )
 
     (errors, charity)
