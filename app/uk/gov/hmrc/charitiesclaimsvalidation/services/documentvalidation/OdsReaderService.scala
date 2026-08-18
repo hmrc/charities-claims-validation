@@ -35,9 +35,6 @@ object OdsReaderService:
 
   private val logger = Logger(getClass)
 
-  /*
-   To read from remote url
-   */
   def withDocumentStream[A](downloadUrl: String)(f: Document => IO[A]): IO[A] =
     Resource
       .fromAutoCloseable(
@@ -56,9 +53,6 @@ object OdsReaderService:
           }
       }
 
-  /*
-   To read from file path (tests / dev)
-   */
   def withDocument[A](path: String)(f: Document => IO[A]): IO[A] =
     Resource
       .fromAutoCloseable(IO.blocking(new ZipFile(Paths.get(path).toFile)))

@@ -175,7 +175,6 @@ class OdsReaderServiceSpec extends BaseSpec {
 
 object OdsReaderServiceSpec {
 
-  /* Builds a malformed .ods in a temp file */
   def zipContaining(entries: (String, String)*): Path = {
     val zipPath = Files.createTempFile("not-an-ods", ".ods")
     val out     = new ZipOutputStream(Files.newOutputStream(zipPath))

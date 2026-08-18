@@ -9,12 +9,10 @@ lazy val appName: String = "charities-claims-validation"
 
 lazy val microservice = Project("charities-claims-validation", file("."))
   .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin)
-  .disablePlugins(JUnitXmlReportPlugin) //Required to prevent https://github.com/scalatest/scalatest/issues/1427
+  .disablePlugins(JUnitXmlReportPlugin)
   .settings(
     name := appName,
     libraryDependencies ++= AppDependencies.compile ++ AppDependencies.test,
-    // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
-    // suppress warnings in generated routes files
     scalacOptions ++= ScalaCompilerFlags.scalaCompilerOptions,
     playDefaultPort := 8032,
     scalafmtOnCompile := true
