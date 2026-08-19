@@ -60,6 +60,9 @@ class ConnectedCharitiesValidationService @Inject() ()(using ioRuntime: IORuntim
         case _: NotAnOdsFileException =>
           logger.warn("ConnectedCharities validation failed: not an ODF spreadsheet")
           (List(sheetNameIsDifferent), None)
+        case e: org.xml.sax.SAXException =>
+          logger.warn(s"ConnectedCharities validation failed: invalid XML: ${e.getMessage}")
+          (List(spreadsheetUnexpectedError), None)
         case ex =>
           logger.error(s"ConnectedCharities validation failed with unexpected error: ${ex.getMessage}", ex)
           (List(spreadsheetUnexpectedError), None)

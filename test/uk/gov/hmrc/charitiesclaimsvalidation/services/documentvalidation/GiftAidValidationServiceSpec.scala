@@ -223,6 +223,18 @@ class GiftAidValidationServiceSpec extends BaseSpec {
       )
       validResult shouldBe None
     }
+
+    "return a validation error if the spreadsheet is invalid XML" in {
+      val (errorResult, validResult) = new GiftAidValidationService().validate(giftAidInvalidXmlDataPath).futureValue
+
+      errorResult shouldBe List(
+        ValidationError(
+          "fileError",
+          "validationService.commonFile.message.2"
+        )
+      )
+      validResult shouldBe None
+    }
   }
 
   "validateRows " - {
@@ -742,6 +754,8 @@ object GiftAidValidationServiceSpec {
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-EmptyData.ods").toURI.toURL.toString
   val giftAidBadSheetNameDataPath: String =
     new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-BadSheetNameData.ods").toURI.toURL.toString
+  val giftAidInvalidXmlDataPath: String =
+    new java.io.File("test/resources/giftAid/Gift-Aid-Schedule-Excel-InvalidXML.ods").toURI.toURL.toString
 
   val validData = GiftAidScheduleData(
     Some(LocalDate.of(2017, 11, 10)),

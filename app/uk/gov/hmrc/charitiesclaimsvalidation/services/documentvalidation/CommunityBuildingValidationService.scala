@@ -78,6 +78,9 @@ class CommunityBuildingValidationService @Inject() ()(using ioRuntime: IORuntime
         case _: NotAnOdsFileException =>
           logger.warn("CommunityBuildings validation failed: not an ODF spreadsheet")
           (List(sheetNameIsDifferent), None)
+        case e: org.xml.sax.SAXException =>
+          logger.warn(s"CommunityBuildings validation failed: invalid XML: ${e.getMessage}")
+          (List(spreadsheetUnexpectedError), None)
         case ex =>
           logger.error(s"CommunityBuildings validation failed with unexpected error: ${ex.getMessage}", ex)
           (List(spreadsheetUnexpectedError), None)

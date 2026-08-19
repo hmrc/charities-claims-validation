@@ -73,6 +73,9 @@ class OtherIncomeValidationService @Inject() ()(using ioRuntime: IORuntime) exte
         case _: NotAnOdsFileException =>
           logger.warn("OtherIncome validation failed: not an ODF spreadsheet")
           (List(sheetNameIsDifferent), None)
+        case e: org.xml.sax.SAXException =>
+          logger.warn(s"OtherIncome validation failed: invalid XML: ${e.getMessage}")
+          (List(spreadsheetUnexpectedError), None)
         case ex =>
           logger.error(s"OtherIncome validation failed with unexpected error: ${ex.getMessage}", ex)
           (List(spreadsheetUnexpectedError), None)
