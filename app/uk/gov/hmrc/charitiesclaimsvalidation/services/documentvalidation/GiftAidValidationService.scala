@@ -65,6 +65,9 @@ class GiftAidValidationService @Inject() ()(using ioRuntime: IORuntime) extends 
         case _: NotAnOdsFileException =>
           logger.warn("GiftAid validation failed: not an ODF spreadsheet")
           (List(sheetNameIsDifferent), None)
+        case e: org.xml.sax.SAXException =>
+          logger.warn(s"GiftAid validation failed: invalid XML: ${e.getMessage}")
+          (List(spreadsheetUnexpectedError), None)
         case ex =>
           logger.error(s"GiftAid validation failed with unexpected error: ${ex.getMessage}", ex)
           (List(spreadsheetUnexpectedError), None)

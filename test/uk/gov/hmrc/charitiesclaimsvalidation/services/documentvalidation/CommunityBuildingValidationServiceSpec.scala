@@ -122,6 +122,18 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
         )
       )
     }
+
+    "return a validation error if the spreadsheet is invalid XML" in {
+      val (errorResult, validResult) =
+        new CommunityBuildingValidationService().validate(CommunityBuildingInvalidXmlDataPath).futureValue
+
+      errorResult shouldBe List(
+        ValidationError(
+          "fileError",
+          "validationService.commonFile.message.2"
+        )
+      )
+    }
   }
 
   "validateRows" - {
@@ -1088,4 +1100,6 @@ object CommunityBuildingValidationServiceSpec {
     new java.io.File("test/resources/communitybuildings/community_buildings_excel-BadSecondYearDate.ods").toURI.toURL.toString
   val CommunityBuildingCurrentTaxYearDataPath: String =
     new java.io.File("test/resources/communitybuildings/community_buildings_excel-CurrentTaxYear.ods").toURI.toURL.toString
+  val CommunityBuildingInvalidXmlDataPath: String =
+    new java.io.File("test/resources/communitybuildings/community_buildings_excel-InvalidXML.ods").toURI.toURL.toString
 }
