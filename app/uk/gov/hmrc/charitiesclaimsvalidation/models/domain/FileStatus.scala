@@ -18,27 +18,27 @@ package uk.gov.hmrc.charitiesclaimsvalidation.models.domain
 
 import play.api.libs.json.*
 
-enum FileStatus(val status: String) {
-  case AWAITING_UPLOAD     extends FileStatus("AWAITING_UPLOAD")
-  case VERIFYING           extends FileStatus("VERIFYING")
-  case VERIFICATION_FAILED extends FileStatus("VERIFICATION_FAILED")
-  case VALIDATING          extends FileStatus("VALIDATING")
-  case VALIDATED           extends FileStatus("VALIDATED")
-  case VALIDATION_FAILED   extends FileStatus("VALIDATION_FAILED")
+enum FileStatus {
+  case AWAITING_UPLOAD
+  case VERIFYING
+  case VERIFICATION_FAILED
+  case VALIDATING
+  case VALIDATED
+  case VALIDATION_FAILED
 }
 
 object FileStatus {
   implicit val format: Format[FileStatus] = new Format[FileStatus] {
-    override def writes(status: FileStatus): JsValue = JsString(status.status)
+    override def writes(status: FileStatus): JsValue = JsString(status.toString)
 
     override def reads(json: JsValue): JsResult[FileStatus] = json match {
-      case JsString(AWAITING_UPLOAD.status)     => JsSuccess(AWAITING_UPLOAD)
-      case JsString(VERIFYING.status)           => JsSuccess(VERIFYING)
-      case JsString(VERIFICATION_FAILED.status) => JsSuccess(VERIFICATION_FAILED)
-      case JsString(VALIDATING.status)          => JsSuccess(VALIDATING)
-      case JsString(VALIDATED.status)           => JsSuccess(VALIDATED)
-      case JsString(VALIDATION_FAILED.status)   => JsSuccess(VALIDATION_FAILED)
-      case _                                    => JsError("Invalid FileStatus")
+      case JsString(str) if str == AWAITING_UPLOAD.toString     => JsSuccess(AWAITING_UPLOAD)
+      case JsString(str) if str == VERIFYING.toString           => JsSuccess(VERIFYING)
+      case JsString(str) if str == VERIFICATION_FAILED.toString => JsSuccess(VERIFICATION_FAILED)
+      case JsString(str) if str == VALIDATING.toString          => JsSuccess(VALIDATING)
+      case JsString(str) if str == VALIDATED.toString           => JsSuccess(VALIDATED)
+      case JsString(str) if str == VALIDATION_FAILED.toString   => JsSuccess(VALIDATION_FAILED)
+      case _                                                    => JsError("Invalid FileStatus")
     }
   }
 }

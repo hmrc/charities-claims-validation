@@ -139,18 +139,18 @@ object ClaimValidationStatusFormats {
         case s: ValidatedStatus          => validatedFmt.writes(s)
         case s: ValidationFailedStatus   => validationFailedFmt.writes(s)
       }
-      baseJson + ("fileStatus" -> JsString(status.fileStatus.status))
+      baseJson + ("fileStatus" -> JsString(status.fileStatus.toString))
     }
 
     override def reads(json: JsValue): JsResult[ClaimValidationStatus] = {
       (json \ "fileStatus").validate[String].flatMap {
-        case AWAITING_UPLOAD.status     => awaitingUploadFormat.reads(json)
-        case VERIFYING.status           => verifyingFormat.reads(json)
-        case VERIFICATION_FAILED.status => verificationFailedFormat.reads(json)
-        case VALIDATING.status          => validatingFormat.reads(json)
-        case VALIDATED.status           => validatedFmt.reads(json)
-        case VALIDATION_FAILED.status   => validationFailedFmt.reads(json)
-        case other                      => JsError(s"Unknown fileStatus: $other")
+        case str if str == AWAITING_UPLOAD.toString     => awaitingUploadFormat.reads(json)
+        case str if str == VERIFYING.toString           => verifyingFormat.reads(json)
+        case str if str == VERIFICATION_FAILED.toString => verificationFailedFormat.reads(json)
+        case str if str == VALIDATING.toString          => validatingFormat.reads(json)
+        case str if str == VALIDATED.toString           => validatedFmt.reads(json)
+        case str if str == VALIDATION_FAILED.toString   => validationFailedFmt.reads(json)
+        case other                                      => JsError(s"Unknown fileStatus: $other")
       }
     }
   }

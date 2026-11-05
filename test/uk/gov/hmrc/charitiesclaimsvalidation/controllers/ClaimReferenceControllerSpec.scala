@@ -77,7 +77,7 @@ class ClaimReferenceControllerSpec extends BaseSpec with MockitoSugar {
       def validRequest(fileStatus: FileStatus) = FakeRequest(PUT, "/")
         .withBody(
           Json.obj(
-            "fileStatus" -> fileStatus.status
+            "fileStatus" -> fileStatus
           )
         )
         .withHeaders(CONTENT_TYPE -> "application/json")
@@ -147,7 +147,7 @@ class ClaimReferenceControllerSpec extends BaseSpec with MockitoSugar {
         status(result) mustBe OK
         (contentAsJson(result) \ "reference").as[String] mustBe reference
         (contentAsJson(result) \ "validationType").as[String] mustBe "GiftAid"
-        (contentAsJson(result) \ "fileStatus").as[String] mustBe FileStatus.AWAITING_UPLOAD.status
+        (contentAsJson(result) \ "fileStatus").as[String] mustBe FileStatus.AWAITING_UPLOAD.toString
         (contentAsJson(result) \ "uploadUrl").as[String] mustBe "https://upload-url.com"
       }
 
@@ -198,7 +198,7 @@ class ClaimReferenceControllerSpec extends BaseSpec with MockitoSugar {
         val result = controller.getUploadResult(claimId, reference)(FakeRequest())
 
         status(result) mustBe OK
-        (contentAsJson(result) \ "fileStatus").as[String] mustBe FileStatus.VERIFYING.status
+        (contentAsJson(result) \ "fileStatus").as[String] mustBe FileStatus.VERIFYING.toString
         (contentAsJson(result) \ "uploadUrl").asOpt[String] mustBe None
       }
 
@@ -215,7 +215,7 @@ class ClaimReferenceControllerSpec extends BaseSpec with MockitoSugar {
         val result = controller.getUploadResult(claimId, reference)(FakeRequest())
 
         status(result) mustBe OK
-        (contentAsJson(result) \ "fileStatus").as[String] mustBe FileStatus.VALIDATING.status
+        (contentAsJson(result) \ "fileStatus").as[String] mustBe FileStatus.VALIDATING.toString
         (contentAsJson(result) \ "validationType").as[String] mustBe "OtherIncome"
       }
     }

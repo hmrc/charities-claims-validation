@@ -150,9 +150,9 @@ class ClaimValidationStatusRepository @Inject() (
     if (existingStatus == requestedStatus) {
       Future.successful(false)
     } else {
-      val filter = and(equal("_id", compoundId(claimId, reference)), equal("fileStatus", existingStatus.status))
+      val filter = and(equal("_id", compoundId(claimId, reference)), equal("fileStatus", existingStatus.toString))
       val update = combine(
-        set("fileStatus", requestedStatus.status),
+        set("fileStatus", requestedStatus.toString),
         set("updatedAt", new BsonDateTime(Instant.now().toEpochMilli))
       )
       retry("updateFileStatus") {
