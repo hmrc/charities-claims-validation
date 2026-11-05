@@ -5,7 +5,7 @@ object AppDependencies {
   private val bootstrapVersion  = "10.7.0"
   private val catsEffectVersion = "3.6.3"
   private val catsVersion       = "2.13.0"
-  private val hmrcMongoVersion  = "2.12.0"
+  private val hmrcMongoVersion  = "2.14.0"
   private val scalaCheckVersion  = "3.2.19.0"
   private val scalaGenVersion  = "1.1.0"
 
