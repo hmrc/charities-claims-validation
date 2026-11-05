@@ -82,9 +82,9 @@ class ClaimReferenceController @Inject() (
     reference: String,
     requestedStatus: FileStatus
   ): Future[Result] = requestedStatus match {
-    case FileStatus.Verifying =>
+    case FileStatus.VERIFYING =>
       claimReferenceService
-        .updateStatusByReference(claimId, reference, FileStatus.AwaitingUpload, requestedStatus)
+        .updateStatusByReference(claimId, reference, FileStatus.AWAITING_UPLOAD, requestedStatus)
         .map {
           case Left(error)            => notFound(error)
           case Right(successResponse) => Ok(Json.toJson(successResponse))

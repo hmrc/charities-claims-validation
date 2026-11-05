@@ -272,8 +272,8 @@ class UpscanCallbackService @Inject() (
 
           updateStatus(claimId, existingStatus.reference, newStatus)
             .map(result => (result, Some(existingStatus)))
-        else if existingStatus.fileStatus.equalsIgnoreCase("AWAITING_UPLOAD") ||
-          existingStatus.fileStatus.equalsIgnoreCase("VERIFYING")
+        else if existingStatus.fileStatus == FileStatus.AWAITING_UPLOAD ||
+          existingStatus.fileStatus == FileStatus.VERIFYING
         then
           logger.info(
             s"File accepted, starting validation for claimId=$claimId, reference=${existingStatus.reference}," +

@@ -22,7 +22,7 @@ import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
 final case class UploadResultResponse(
   reference: String,
   validationType: ValidationType,
-  fileStatus: String,
+  fileStatus: FileStatus,
   uploadUrl: Option[String] = None,
   failureDetails: Option[FailureDetails] = None,
   giftAidScheduleData: Option[GiftAidScheduleData] = None,

@@ -24,7 +24,6 @@ import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.charitiesclaimsvalidation.config.AppConfig
 import uk.gov.hmrc.charitiesclaimsvalidation.models.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
-import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.FileStatus.{AwaitingUpload, Verifying}
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter, SymmetricCryptoFactory}
 import uk.gov.hmrc.mongo.test.MongoSupport
 
@@ -184,7 +183,7 @@ class ClaimValidationStatusRepositorySpec
       result shouldBe defined
       result.get.claimId shouldBe claimId
       result.get.reference shouldBe ref1
-      result.get.fileStatus shouldBe "AWAITING_UPLOAD"
+      result.get.fileStatus shouldBe FileStatus.AWAITING_UPLOAD
 
     "return None when claimId matches but reference does not" in:
       await(repository.insert(validationStatus1))
@@ -372,31 +371,32 @@ class ClaimValidationStatusRepositorySpec
         remainingDoc shouldBe empty
 
   "updateFileStatusIfCurrentStatusMatches" should:
-    s"return true and update fileStatus when a matching document exists and the status is ${FileStatus.AwaitingUpload.value} " in:
+    "return true and update fileStatus when a matching document exists and the status is AWAITING_UPLOAD" in:
       await(repository.insert(validationStatus1))
 
-      val result = await(repository.updateFileStatusIfCurrentStatusMatches(claimId, ref1, AwaitingUpload, Verifying))
+      val result = await(repository.updateFileStatusIfCurrentStatusMatches(claimId, ref1, FileStatus.AWAITING_UPLOAD, FileStatus.VERIFYING))
 
       result shouldBe true
 
       val updatedDoc = await(repository.findByReference(claimId, ref1))
-      updatedDoc.map(_.fileStatus) shouldBe Some(FileStatus.Verifying.value)
+      updatedDoc.map(_.fileStatus) shouldBe Some(FileStatus.VERIFYING)
       updatedDoc.map(_.updatedAt.isAfter(timestamp)) shouldBe Some(true)
 
-    s"return false when the status is already ${FileStatus.Verifying.value} and no update" in:
+    "return false when the status is already VERIFYING and no update" in:
       await(repository.insert(validationStatus2))
-      val result = await(repository.updateFileStatusIfCurrentStatusMatches(claimId, ref2, Verifying, Verifying))
+      val result = await(repository.updateFileStatusIfCurrentStatusMatches(claimId, ref2, FileStatus.VERIFYING, FileStatus.VERIFYING))
 
       result shouldBe false
 
-    s"return false when the status is ${FileStatus.VerificationFailed.value} and no update" in:
+    "return false when the status is VERIFICATION_FAILED and no update" in:
       await(repository.insert(validationStatus2))
-      val result = await(repository.updateFileStatusIfCurrentStatusMatches(claimId, ref2, FileStatus.VerificationFailed, Verifying))
+      val result = await(repository.updateFileStatusIfCurrentStatusMatches(claimId, ref2, FileStatus.VERIFICATION_FAILED, FileStatus.VERIFYING))
 
       result shouldBe false
 
     "return false when no document matches the filter " in:
-      val result = await(repository.updateFileStatusIfCurrentStatusMatches(claimId, "non-existing-ref ", AwaitingUpload, Verifying))
+      val result =
+        await(repository.updateFileStatusIfCurrentStatusMatches(claimId, "non-existing-ref ", FileStatus.AWAITING_UPLOAD, FileStatus.VERIFYING))
 
       result shouldBe false
 

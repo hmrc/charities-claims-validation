@@ -17,13 +17,13 @@
 package uk.gov.hmrc.charitiesclaimsvalidation.models.responses
 
 import play.api.libs.json.{Json, OWrites, Writes}
-import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{AwaitingUploadStatus, ClaimValidationStatus, ValidationType}
+import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{AwaitingUploadStatus, ClaimValidationStatus, FileStatus, ValidationType}
 import cats.syntax.all.catsSyntaxTuple2Semigroupal
 
 case class UploadSummaryItem(
   reference: String,
   validationType: ValidationType,
-  fileStatus: String,
+  fileStatus: FileStatus,
   uploadUrl: Option[String] = None,
   fields: Option[Map[String, String]] = None
 )

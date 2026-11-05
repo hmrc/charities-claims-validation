@@ -23,6 +23,7 @@ import play.api.mvc.Results.{Created, InternalServerError}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.responses.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
+
 import java.time.temporal.ChronoUnit
 import uk.gov.hmrc.charitiesclaimsvalidation.models.requests.UploadRequest
 import uk.gov.hmrc.charitiesclaimsvalidation.repositories.ClaimValidationStatusRepository
@@ -86,7 +87,7 @@ class ClaimReferenceService @Inject (repository: ClaimValidationStatusRepository
         logger.warn(s"Upload not found for status update: claimId=$claimId, reference=$reference")
         Future.successful(Left(NotFoundClaimReference(claimId, reference)))
 
-      case Some(validationStatus) if validationStatus.fileStatus != currentStatus.value =>
+      case Some(validationStatus) if validationStatus.fileStatus != currentStatus =>
         logger.info(s"Status already transitioned for claimId=$claimId, reference=$reference, currentFileStatus=${validationStatus.fileStatus}")
         Future.successful(Right(SuccessResponse(success = true)))
 
