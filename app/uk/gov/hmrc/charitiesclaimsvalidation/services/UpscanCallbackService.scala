@@ -91,7 +91,7 @@ class UpscanCallbackService @Inject() (
           }
 
       case _ =>
-        logger.error(s"Error validating callback for claimId=$claimId, reference==${callbackRequest.reference}")
+        logger.error(s"Error validating callback for claimId=$claimId, reference=${callbackRequest.reference}")
         Future.unit
     }
 
