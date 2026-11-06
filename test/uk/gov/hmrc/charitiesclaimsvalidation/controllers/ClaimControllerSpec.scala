@@ -25,7 +25,7 @@ import play.api.libs.json.Json
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.charitiesclaimsvalidation.controllers.actions.FakeClaimsAuthorisedAction
-import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.ValidationType
+import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{FileStatus, ValidationType}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.responses.{SuccessResponse, UploadSummaryItem, UploadSummaryResponse}
 import uk.gov.hmrc.charitiesclaimsvalidation.services.{ClaimService, UploadSummaryService}
 import uk.gov.hmrc.charitiesclaimsvalidation.util.{AllMocks, BaseSpec}
@@ -148,7 +148,7 @@ class ClaimControllerSpec extends BaseSpec with MockitoSugar with ScalaCheckProp
         val summaryItem = UploadSummaryItem(
           reference = "ref-uuid-001",
           validationType = ValidationType.GiftAid,
-          fileStatus = "VALIDATED",
+          fileStatus = FileStatus.VALIDATED,
           uploadUrl = None
         )
         val response = UploadSummaryResponse(Seq(summaryItem))
@@ -171,8 +171,8 @@ class ClaimControllerSpec extends BaseSpec with MockitoSugar with ScalaCheckProp
 
       "return 200 OK with multiple uploads" in new Fixture {
         val summaryItems = Seq(
-          UploadSummaryItem("ref-1", ValidationType.GiftAid, "VALIDATED", None),
-          UploadSummaryItem("ref-2", ValidationType.OtherIncome, "VALIDATING", None)
+          UploadSummaryItem("ref-1", ValidationType.GiftAid, FileStatus.VALIDATED, None),
+          UploadSummaryItem("ref-2", ValidationType.OtherIncome, FileStatus.VALIDATING, None)
         )
         val response = UploadSummaryResponse(summaryItems)
 
@@ -189,7 +189,7 @@ class ClaimControllerSpec extends BaseSpec with MockitoSugar with ScalaCheckProp
         val summaryItem = UploadSummaryItem(
           reference = "ref-uuid-001",
           validationType = ValidationType.GiftAid,
-          fileStatus = "AWAITING_UPLOAD",
+          fileStatus = FileStatus.AWAITING_UPLOAD,
           uploadUrl = Some("https://upscan-upload-proxy/bucket"),
           fields = Some(Map("foo" -> "bar"))
         )

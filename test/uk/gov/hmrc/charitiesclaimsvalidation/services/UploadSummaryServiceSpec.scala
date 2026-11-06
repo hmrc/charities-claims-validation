@@ -73,7 +73,7 @@ class UploadSummaryServiceSpec extends BaseSpec with MockitoSugar {
         result.get.uploads.head shouldBe UploadSummaryItem(
           reference = reference,
           validationType = ValidationType.GiftAid,
-          fileStatus = "VERIFYING",
+          fileStatus = FileStatus.VERIFYING,
           uploadUrl = None
         )
       }
@@ -105,7 +105,7 @@ class UploadSummaryServiceSpec extends BaseSpec with MockitoSugar {
 
         result shouldBe defined
         result.get.uploads should have size 2
-        result.get.uploads.map(_.fileStatus) should contain allOf ("VERIFYING", "VALIDATED")
+        result.get.uploads.map(_.fileStatus) should contain allOf (FileStatus.VERIFYING, FileStatus.VALIDATED)
       }
 
       "include uploadUrl when status is AWAITING_UPLOAD" in {
@@ -131,7 +131,7 @@ class UploadSummaryServiceSpec extends BaseSpec with MockitoSugar {
 
         result shouldBe defined
         result.get.uploads.head.uploadUrl shouldBe Some(uploadUrl)
-        result.get.uploads.head.fileStatus shouldBe "AWAITING_UPLOAD"
+        result.get.uploads.head.fileStatus shouldBe FileStatus.AWAITING_UPLOAD
       }
 
       "purge expired AWAITING_UPLOAD uploads (7+ days old)" in {
