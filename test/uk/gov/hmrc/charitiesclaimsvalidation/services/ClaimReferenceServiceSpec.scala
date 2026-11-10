@@ -40,8 +40,8 @@ class ClaimReferenceServiceSpec extends BaseSpec with MockitoSugar {
   private val claimId         = "claim-123"
   private val reference       = "ref-456"
   private val someFields      = Some(Map("foo" -> "bar"))
-  private val existingStatus  = FileStatus.AwaitingUpload
-  private val requestedStatus = FileStatus.Verifying
+  private val existingStatus  = FileStatus.AWAITING_UPLOAD
+  private val requestedStatus = FileStatus.VERIFYING
 
   trait Fixture {
     implicit val ec: scala.concurrent.ExecutionContext                       = scala.concurrent.ExecutionContext.global
@@ -157,7 +157,7 @@ class ClaimReferenceServiceSpec extends BaseSpec with MockitoSugar {
           .updateFileStatusIfCurrentStatusMatches(claimId, reference, existingStatus, requestedStatus)
       }
 
-      s"return response as true with no mongo update when file status is not ${FileStatus.AwaitingUpload.value}" in new Fixture {
+      "return response as true with no mongo update when file status is not AWAITING_UPLOAD" in new Fixture {
         val validationStatusVerifying = VerifyingStatus(
           claimId = claimId,
           reference = reference,
@@ -231,7 +231,7 @@ class ClaimReferenceServiceSpec extends BaseSpec with MockitoSugar {
           UploadResultResponse(
             reference = reference,
             validationType = ValidationType.GiftAid,
-            fileStatus = "AWAITING_UPLOAD",
+            fileStatus = FileStatus.AWAITING_UPLOAD,
             uploadUrl = Some("https://upload-url.com")
           )
         )
@@ -302,7 +302,7 @@ class ClaimReferenceServiceSpec extends BaseSpec with MockitoSugar {
           UploadResultResponse(
             reference = reference,
             validationType = ValidationType.OtherIncome,
-            fileStatus = "VERIFYING"
+            fileStatus = FileStatus.VERIFYING
           )
         )
       }
@@ -325,7 +325,7 @@ class ClaimReferenceServiceSpec extends BaseSpec with MockitoSugar {
         result match {
           case Right(response) =>
             response.reference mustBe reference
-            response.fileStatus mustBe "VERIFICATION_FAILED"
+            response.fileStatus mustBe FileStatus.VERIFICATION_FAILED
             response.failureDetails mustBe Some(FailureDetails(FailureReason.Quarantine, "File has a virus"))
           case Left(error) =>
             fail(s"Expected Right but got Left($error)")
@@ -350,7 +350,7 @@ class ClaimReferenceServiceSpec extends BaseSpec with MockitoSugar {
           UploadResultResponse(
             reference = reference,
             validationType = ValidationType.CommunityBuildings,
-            fileStatus = "VALIDATING"
+            fileStatus = FileStatus.VALIDATING
           )
         )
       }
@@ -380,7 +380,7 @@ class ClaimReferenceServiceSpec extends BaseSpec with MockitoSugar {
         result match {
           case Right(response) =>
             response.reference mustBe reference
-            response.fileStatus mustBe "VALIDATED"
+            response.fileStatus mustBe FileStatus.VALIDATED
             response.giftAidScheduleData mustBe Some(giftAidData)
           case Left(error) =>
             fail(s"Expected Right but got Left($error)")
@@ -411,7 +411,7 @@ class ClaimReferenceServiceSpec extends BaseSpec with MockitoSugar {
         result match {
           case Right(response) =>
             response.reference mustBe reference
-            response.fileStatus mustBe "VALIDATION_FAILED"
+            response.fileStatus mustBe FileStatus.VALIDATION_FAILED
             response.errors mustBe Some(errors)
           case Left(error) =>
             fail(s"Expected Right but got Left($error)")

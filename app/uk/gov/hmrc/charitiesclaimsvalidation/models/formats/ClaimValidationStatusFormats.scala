@@ -19,6 +19,7 @@ package uk.gov.hmrc.charitiesclaimsvalidation.models.formats
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.*
+import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.FileStatus.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{AwaitingUploadStatus, ClaimValidationStatus, CommunityBuildingData, ConnectedCharitiesData, FailureDetails, GiftAidScheduleData, OtherIncomeData, ValidatedStatus, ValidatingStatus, ValidationError, ValidationFailedStatus, ValidationType, VerificationFailedStatus, VerifyingStatus}
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
@@ -138,18 +139,18 @@ object ClaimValidationStatusFormats {
         case s: ValidatedStatus          => validatedFmt.writes(s)
         case s: ValidationFailedStatus   => validationFailedFmt.writes(s)
       }
-      baseJson + ("fileStatus" -> JsString(status.fileStatus))
+      baseJson + ("fileStatus" -> JsString(status.fileStatus.toString))
     }
 
     override def reads(json: JsValue): JsResult[ClaimValidationStatus] = {
       (json \ "fileStatus").validate[String].flatMap {
-        case "AWAITING_UPLOAD"     => awaitingUploadFormat.reads(json)
-        case "VERIFYING"           => verifyingFormat.reads(json)
-        case "VERIFICATION_FAILED" => verificationFailedFormat.reads(json)
-        case "VALIDATING"          => validatingFormat.reads(json)
-        case "VALIDATED"           => validatedFmt.reads(json)
-        case "VALIDATION_FAILED"   => validationFailedFmt.reads(json)
-        case other                 => JsError(s"Unknown fileStatus: $other")
+        case str if str == AWAITING_UPLOAD.toString     => awaitingUploadFormat.reads(json)
+        case str if str == VERIFYING.toString           => verifyingFormat.reads(json)
+        case str if str == VERIFICATION_FAILED.toString => verificationFailedFormat.reads(json)
+        case str if str == VALIDATING.toString          => validatingFormat.reads(json)
+        case str if str == VALIDATED.toString           => validatedFmt.reads(json)
+        case str if str == VALIDATION_FAILED.toString   => validationFailedFmt.reads(json)
+        case other                                      => JsError(s"Unknown fileStatus: $other")
       }
     }
   }

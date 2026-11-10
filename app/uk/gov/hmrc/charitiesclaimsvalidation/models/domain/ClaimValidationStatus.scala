@@ -27,7 +27,7 @@ sealed trait ClaimValidationStatus {
   def claimId: String
   def reference: String
   def validationType: ValidationType
-  def fileStatus: String
+  def fileStatus: FileStatus
   def createdAt: Instant
   def updatedAt: Instant
 }
@@ -42,7 +42,7 @@ final case class AwaitingUploadStatus(
   createdAt: Instant,
   updatedAt: Instant
 ) extends ClaimValidationStatus {
-  override def fileStatus: String = "AWAITING_UPLOAD"
+  def fileStatus: FileStatus = FileStatus.AWAITING_UPLOAD
 }
 
 final case class VerifyingStatus(
@@ -52,7 +52,7 @@ final case class VerifyingStatus(
   createdAt: Instant,
   updatedAt: Instant
 ) extends ClaimValidationStatus {
-  override def fileStatus: String = "VERIFYING"
+  def fileStatus: FileStatus = FileStatus.VERIFYING
 }
 
 final case class VerificationFailedStatus(
@@ -63,7 +63,7 @@ final case class VerificationFailedStatus(
   createdAt: Instant,
   updatedAt: Instant
 ) extends ClaimValidationStatus {
-  override def fileStatus: String = "VERIFICATION_FAILED"
+  def fileStatus: FileStatus = FileStatus.VERIFICATION_FAILED
 }
 
 final case class ValidatingStatus(
@@ -73,7 +73,7 @@ final case class ValidatingStatus(
   createdAt: Instant,
   updatedAt: Instant
 ) extends ClaimValidationStatus {
-  override def fileStatus: String = "VALIDATING"
+  def fileStatus: FileStatus = FileStatus.VALIDATING
 }
 
 final case class ValidatedStatus(
@@ -87,7 +87,7 @@ final case class ValidatedStatus(
   createdAt: Instant,
   updatedAt: Instant
 ) extends ClaimValidationStatus {
-  override def fileStatus: String = "VALIDATED"
+  def fileStatus: FileStatus = FileStatus.VALIDATED
 }
 
 final case class ValidationFailedStatus(
@@ -102,7 +102,7 @@ final case class ValidationFailedStatus(
   createdAt: Instant,
   updatedAt: Instant
 ) extends ClaimValidationStatus {
-  override def fileStatus: String = "VALIDATION_FAILED"
+  def fileStatus: FileStatus = FileStatus.VALIDATION_FAILED
 }
 
 object ClaimValidationStatus {

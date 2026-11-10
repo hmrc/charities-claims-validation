@@ -25,20 +25,20 @@ class FileStatusSpec extends AnyWordSpec with Matchers:
 
   "FileStatus" should:
     "serialize and deserialize correctly" in:
-      FileStatus.format.writes(FileStatus.AwaitingUpload) shouldBe JsString("AWAITING_UPLOAD")
-      FileStatus.format.reads(JsString("AWAITING_UPLOAD")).get shouldBe FileStatus.AwaitingUpload
+      FileStatus.format.writes(FileStatus.AWAITING_UPLOAD) shouldBe JsString("AWAITING_UPLOAD")
+      FileStatus.format.reads(JsString("AWAITING_UPLOAD")).get shouldBe FileStatus.AWAITING_UPLOAD
 
-      FileStatus.format.writes(FileStatus.Verifying) shouldBe JsString("VERIFYING")
-      FileStatus.format.reads(JsString("VERIFYING")).get shouldBe FileStatus.Verifying
+      FileStatus.format.writes(FileStatus.VERIFYING) shouldBe JsString("VERIFYING")
+      FileStatus.format.reads(JsString("VERIFYING")).get shouldBe FileStatus.VERIFYING
 
-      FileStatus.format.writes(FileStatus.VerificationFailed) shouldBe JsString("VERIFICATION_FAILED")
-      FileStatus.format.reads(JsString("VERIFICATION_FAILED")).get shouldBe FileStatus.VerificationFailed
+      FileStatus.format.writes(FileStatus.VERIFICATION_FAILED) shouldBe JsString("VERIFICATION_FAILED")
+      FileStatus.format.reads(JsString("VERIFICATION_FAILED")).get shouldBe FileStatus.VERIFICATION_FAILED
 
-      FileStatus.format.writes(FileStatus.Validating) shouldBe JsString("VALIDATING")
-      FileStatus.format.reads(JsString("VALIDATING")).get shouldBe FileStatus.Validating
+      FileStatus.format.writes(FileStatus.VALIDATING) shouldBe JsString("VALIDATING")
+      FileStatus.format.reads(JsString("VALIDATING")).get shouldBe FileStatus.VALIDATING
 
-      FileStatus.format.writes(FileStatus.Validated) shouldBe JsString("VALIDATED")
-      FileStatus.format.reads(JsString("VALIDATED")).get shouldBe FileStatus.Validated
+      FileStatus.format.writes(FileStatus.VALIDATED) shouldBe JsString("VALIDATED")
+      FileStatus.format.reads(JsString("VALIDATED")).get shouldBe FileStatus.VALIDATED
 
-      FileStatus.format.writes(FileStatus.ValidationFailed) shouldBe JsString("VALIDATION_FAILED")
-      FileStatus.format.reads(JsString("VALIDATION_FAILED")).get shouldBe FileStatus.ValidationFailed
+      FileStatus.format.writes(FileStatus.VALIDATION_FAILED) shouldBe JsString("VALIDATION_FAILED")
+      FileStatus.format.reads(JsString("VALIDATION_FAILED")).get shouldBe FileStatus.VALIDATION_FAILED

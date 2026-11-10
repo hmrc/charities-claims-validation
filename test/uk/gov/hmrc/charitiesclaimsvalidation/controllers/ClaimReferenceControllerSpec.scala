@@ -45,7 +45,6 @@ class ClaimReferenceControllerSpec extends BaseSpec with MockitoSugar {
     "deleteByReference" - {
 
       "return 200 OK with success = true when claimValidationStatus is deleted" in new Fixture {
-
         when(mockClaimReferenceService.deleteByReference("C1", "R1"))
           .thenReturn(Future.successful(Right(SuccessResponse(true))))
 
@@ -56,7 +55,6 @@ class ClaimReferenceControllerSpec extends BaseSpec with MockitoSugar {
       }
 
       "return NOT FOUND with success = false when claimValidationStatus is not found" in new Fixture {
-
         when(mockClaimReferenceService.deleteByReference("C1", "R1"))
           .thenReturn(Future.successful(Left(NotFoundClaimReference("C1", "R1"))))
 
@@ -76,10 +74,10 @@ class ClaimReferenceControllerSpec extends BaseSpec with MockitoSugar {
       val reference           = "ref-456"
       val successResponseTrue = SuccessResponse(true)
 
-      def validRequest(status: FileStatus) = FakeRequest(PUT, "/")
+      def validRequest(fileStatus: FileStatus) = FakeRequest(PUT, "/")
         .withBody(
           Json.obj(
-            "fileStatus" -> status.value
+            "fileStatus" -> fileStatus
           )
         )
         .withHeaders(CONTENT_TYPE -> "application/json")
@@ -91,41 +89,41 @@ class ClaimReferenceControllerSpec extends BaseSpec with MockitoSugar {
 
         status(result) shouldBe BAD_REQUEST
         (contentAsJson(result) \ "error").as[String] mustBe "INVALID_UPDATE_FILE_STATUS_REQUEST"
-        verify(mockClaimReferenceService, never()).updateStatusByReference(claimId, reference, FileStatus.AwaitingUpload, FileStatus.Verifying)
+        verify(mockClaimReferenceService, never()).updateStatusByReference(claimId, reference, FileStatus.AWAITING_UPLOAD, FileStatus.VERIFYING)
       }
 
-      s"return 400 Bad Request when file status is not ${FileStatus.Verifying.value} in the request" in new Fixture {
-        private val result = controller.updateFileStatus(claimId, reference)(validRequest(FileStatus.AwaitingUpload))
+      "return 400 Bad Request when file status is not VERIFYING in the request" in new Fixture {
+        private val result = controller.updateFileStatus(claimId, reference)(validRequest(FileStatus.AWAITING_UPLOAD))
 
         status(result) shouldBe BAD_REQUEST
         (contentAsJson(result) \ "success").asOpt[Boolean].value mustBe false
         (contentAsJson(result) \ "error").as[String] mustBe "INVALID_FILE_STATUS"
-        verify(mockClaimReferenceService, never()).updateStatusByReference(claimId, reference, FileStatus.AwaitingUpload, FileStatus.Verifying)
+        verify(mockClaimReferenceService, never()).updateStatusByReference(claimId, reference, FileStatus.AWAITING_UPLOAD, FileStatus.VERIFYING)
       }
 
-      s"return 200 OK with success when the status is updated successfully from existing status ${FileStatus.AwaitingUpload.value} to " +
-        s"new status ${FileStatus.Verifying.value} " in new Fixture {
-          when(mockClaimReferenceService.updateStatusByReference(claimId, reference, FileStatus.AwaitingUpload, FileStatus.Verifying))
+      "return 200 OK with success when the status is updated successfully from existing status AWAITING_UPLOAD to " +
+        "new status VERIFYING" in new Fixture {
+          when(mockClaimReferenceService.updateStatusByReference(claimId, reference, FileStatus.AWAITING_UPLOAD, FileStatus.VERIFYING))
             .thenReturn(Future.successful(Right(successResponseTrue)))
-          private val result = controller.updateFileStatus(claimId, reference)(validRequest(FileStatus.Verifying))
+          private val result = controller.updateFileStatus(claimId, reference)(validRequest(FileStatus.VERIFYING))
 
           status(result) shouldBe OK
           contentAsJson(result) mustBe Json.toJson(successResponseTrue)
-          verify(mockClaimReferenceService, times(1)).updateStatusByReference(claimId, reference, FileStatus.AwaitingUpload, FileStatus.Verifying)
+          verify(mockClaimReferenceService, times(1)).updateStatusByReference(claimId, reference, FileStatus.AWAITING_UPLOAD, FileStatus.VERIFYING)
         }
 
       "throw error when mongo error thrown" in new Fixture {
         val mongoEx = new MongoException("mongo update failed")
-        when(mockClaimReferenceService.updateStatusByReference(claimId, reference, FileStatus.AwaitingUpload, FileStatus.Verifying))
+        when(mockClaimReferenceService.updateStatusByReference(claimId, reference, FileStatus.AWAITING_UPLOAD, FileStatus.VERIFYING))
           .thenReturn(Future.failed(mongoEx))
 
-        private val result = controller.updateFileStatus(claimId, reference)(validRequest(FileStatus.Verifying))
+        private val result = controller.updateFileStatus(claimId, reference)(validRequest(FileStatus.VERIFYING))
 
         whenReady(result.failed) { ex =>
           ex shouldBe a[MongoException]
           ex.getMessage should include("mongo update failed")
         }
-        verify(mockClaimReferenceService, times(1)).updateStatusByReference(claimId, reference, FileStatus.AwaitingUpload, FileStatus.Verifying)
+        verify(mockClaimReferenceService, times(1)).updateStatusByReference(claimId, reference, FileStatus.AWAITING_UPLOAD, FileStatus.VERIFYING)
       }
     }
 
@@ -137,7 +135,7 @@ class ClaimReferenceControllerSpec extends BaseSpec with MockitoSugar {
         val uploadResult = UploadResultResponse(
           reference = reference,
           validationType = ValidationType.GiftAid,
-          fileStatus = "AWAITING_UPLOAD",
+          fileStatus = FileStatus.AWAITING_UPLOAD,
           uploadUrl = Some("https://upload-url.com")
         )
 
@@ -149,7 +147,7 @@ class ClaimReferenceControllerSpec extends BaseSpec with MockitoSugar {
         status(result) mustBe OK
         (contentAsJson(result) \ "reference").as[String] mustBe reference
         (contentAsJson(result) \ "validationType").as[String] mustBe "GiftAid"
-        (contentAsJson(result) \ "fileStatus").as[String] mustBe "AWAITING_UPLOAD"
+        (contentAsJson(result) \ "fileStatus").as[String] mustBe FileStatus.AWAITING_UPLOAD.toString
         (contentAsJson(result) \ "uploadUrl").as[String] mustBe "https://upload-url.com"
       }
 
@@ -191,7 +189,7 @@ class ClaimReferenceControllerSpec extends BaseSpec with MockitoSugar {
         val uploadResult = UploadResultResponse(
           reference = reference,
           validationType = ValidationType.GiftAid,
-          fileStatus = "VERIFYING"
+          fileStatus = FileStatus.VERIFYING
         )
 
         when(mockClaimReferenceService.getUploadResult(claimId, reference))
@@ -200,7 +198,7 @@ class ClaimReferenceControllerSpec extends BaseSpec with MockitoSugar {
         val result = controller.getUploadResult(claimId, reference)(FakeRequest())
 
         status(result) mustBe OK
-        (contentAsJson(result) \ "fileStatus").as[String] mustBe "VERIFYING"
+        (contentAsJson(result) \ "fileStatus").as[String] mustBe FileStatus.VERIFYING.toString
         (contentAsJson(result) \ "uploadUrl").asOpt[String] mustBe None
       }
 
@@ -208,7 +206,7 @@ class ClaimReferenceControllerSpec extends BaseSpec with MockitoSugar {
         val uploadResult = UploadResultResponse(
           reference = reference,
           validationType = ValidationType.OtherIncome,
-          fileStatus = "VALIDATING"
+          fileStatus = FileStatus.VALIDATING
         )
 
         when(mockClaimReferenceService.getUploadResult(claimId, reference))
@@ -217,7 +215,7 @@ class ClaimReferenceControllerSpec extends BaseSpec with MockitoSugar {
         val result = controller.getUploadResult(claimId, reference)(FakeRequest())
 
         status(result) mustBe OK
-        (contentAsJson(result) \ "fileStatus").as[String] mustBe "VALIDATING"
+        (contentAsJson(result) \ "fileStatus").as[String] mustBe FileStatus.VALIDATING.toString
         (contentAsJson(result) \ "validationType").as[String] mustBe "OtherIncome"
       }
     }

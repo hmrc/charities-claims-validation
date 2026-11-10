@@ -19,7 +19,7 @@ package uk.gov.hmrc.charitiesclaimsvalidation.models
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.*
-import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{AwaitingUploadStatus, Charity, ClaimValidationStatus, CommunityBuilding, CommunityBuildingData, ConnectedCharitiesData, FailureDetails, FailureReason, GiftAidDonation, GiftAidScheduleData, ValidatedStatus, ValidationError, ValidationFailedStatus, ValidationType, VerificationFailedStatus}
+import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{AwaitingUploadStatus, Charity, ClaimValidationStatus, CommunityBuilding, CommunityBuildingData, ConnectedCharitiesData, FailureDetails, FailureReason, FileStatus, GiftAidDonation, GiftAidScheduleData, ValidatedStatus, ValidationError, ValidationFailedStatus, ValidationType, VerificationFailedStatus}
 
 import java.time.{Instant, LocalDate}
 
@@ -48,7 +48,7 @@ class ClaimValidationStatusSpec extends AnyWordSpec with Matchers:
       parsed.claimId shouldBe status.claimId
       parsed.reference shouldBe status.reference
       parsed.validationType shouldBe status.validationType
-      parsed.fileStatus shouldBe "AWAITING_UPLOAD"
+      parsed.fileStatus shouldBe FileStatus.AWAITING_UPLOAD
 
     "serialize and deserialize VerificationFailedStatus with failure details" in:
       val statusWithFailure = VerificationFailedStatus(
@@ -189,7 +189,7 @@ class ClaimValidationStatusSpec extends AnyWordSpec with Matchers:
       val validated = parsed.asInstanceOf[ValidatedStatus]
       validated.connectedCharitiesData shouldBe defined
       validated.connectedCharitiesData.get.charities shouldBe connectedData.charities
-      validated.fileStatus shouldBe "VALIDATED"
+      validated.fileStatus shouldBe FileStatus.VALIDATED
 
     "deserialize a gift aid document stored before entered values existed" in:
       val storedInstant = Json.toJson(timestamp)(uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats.instantFormat)
