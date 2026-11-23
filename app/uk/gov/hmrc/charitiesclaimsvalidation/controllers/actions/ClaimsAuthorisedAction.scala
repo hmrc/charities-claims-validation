@@ -67,10 +67,10 @@ class DefaultClaimsAuthorisedAction @Inject() (
 }
 
 object AuthorisedAction {
-  val ORG_ENROLMENT_KEY     = "HMRC-CHAR-ORG"
-  val ORG_IDENTIFIER_NAME   = Constants.charityKeyType
-  val AGENT_ENROLMENT_KEY   = "HMRC-CHAR-AGENT"
-  val AGENT_IDENTIFIER_NAME = s"AGENT${Constants.charityKeyType}"
+  private val ORG_ENROLMENT_KEY     = "HMRC-CHAR-ORG"
+  private val ORG_IDENTIFIER_NAME   = Constants.charityKeyType
+  private val AGENT_ENROLMENT_KEY   = "HMRC-CHAR-AGENT"
+  private val AGENT_IDENTIFIER_NAME = s"AGENT${Constants.charityKeyType}"
 
   private def hasActiveEnrolment(
     enrolments: Enrolments,
