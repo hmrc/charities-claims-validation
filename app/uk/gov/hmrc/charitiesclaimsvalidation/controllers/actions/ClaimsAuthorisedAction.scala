@@ -21,6 +21,7 @@ import play.api.mvc.*
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.auth.core.retrieve.~
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
 import uk.gov.hmrc.charitiesclaimsvalidation.models.requests.AuthorisedRequest
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
@@ -67,9 +68,9 @@ class DefaultClaimsAuthorisedAction @Inject() (
 
 object AuthorisedAction {
   val ORG_ENROLMENT_KEY     = "HMRC-CHAR-ORG"
-  val ORG_IDENTIFIER_NAME   = "CHARID"
+  val ORG_IDENTIFIER_NAME   = Constants.charityKeyType
   val AGENT_ENROLMENT_KEY   = "HMRC-CHAR-AGENT"
-  val AGENT_IDENTIFIER_NAME = "AGENTCHARID"
+  val AGENT_IDENTIFIER_NAME = s"AGENT${Constants.charityKeyType}"
 
   private def hasActiveEnrolment(
     enrolments: Enrolments,

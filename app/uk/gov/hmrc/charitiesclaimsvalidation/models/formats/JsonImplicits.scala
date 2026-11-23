@@ -18,10 +18,9 @@ package uk.gov.hmrc.charitiesclaimsvalidation.models.formats
 
 import eu.timepit.refined.types.all.NonEmptyString
 import play.api.libs.json.*
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
 
 object JsonImplicits:
-
-  val RequiredParamIsEmpty = "REQUIRED_PARAM_IS_EMPTY"
 
   given bigDecimalWrites: Writes[BigDecimal] = Writes { value =>
     JsString(value.setScale(2, BigDecimal.RoundingMode.HALF_UP).toString)
@@ -30,10 +29,10 @@ object JsonImplicits:
   given Reads[NonEmptyString] = Reads { js =>
     js.validate[String] match
       case JsSuccess(str, _) =>
-        if str.trim.isEmpty then JsError(RequiredParamIsEmpty)
+        if str.trim.isEmpty then JsError(Constants.requiredParamIsEmpty)
         else
           NonEmptyString.from(str.trim) match
-            case Left(_)   => JsError(RequiredParamIsEmpty)
+            case Left(_)   => JsError(Constants.requiredParamIsEmpty)
             case Right(ne) => JsSuccess(ne)
       case JsError(errs) =>
         JsError(errs)
@@ -61,8 +60,8 @@ object JsonImplicits:
             value.validate[NonEmptyString] match
               case ok @ JsSuccess(_, _) => ok
               case JsError(_) =>
-                JsError(path, JsonValidationError(RequiredParamIsEmpty, param))
+                JsError(path, JsonValidationError(Constants.requiredParamIsEmpty, param))
           case _: JsUndefined =>
-            JsError(path, JsonValidationError(RequiredParamIsEmpty, param))
+            JsError(path, JsonValidationError(Constants.requiredParamIsEmpty, param))
       }
     }

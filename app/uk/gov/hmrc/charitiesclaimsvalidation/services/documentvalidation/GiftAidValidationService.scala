@@ -29,6 +29,8 @@ import java.io.FileNotFoundException
 import java.time.LocalDate
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
+
 import scala.concurrent.Future
 import scala.util.Try
 
@@ -42,7 +44,7 @@ class GiftAidValidationService @Inject() ()(using ioRuntime: IORuntime) extends 
     OdsReaderService
       .withDocumentStream(downloadUrl) { doc =>
         for {
-          sheetName           <- verifySheetName(doc, ValidationType.GiftAid)
+          _                   <- verifySheetName(doc, ValidationType.GiftAid)
           giftAidDonationRows <- OdsReaderService.rowsFromDocument[GiftAidDonationRow](doc, GiftAidDonationRow.layout)
           _                   <- IO.raiseWhen(giftAidDonationRows.isEmpty)(NoRowsFoundException)
 
@@ -192,7 +194,7 @@ object GiftAidValidationService {
 
   private def validateEarliestDonationDate(earliestDonationDateCell: String): Either[ValidationError, Option[LocalDate]] = {
     val fieldKey       = "earliestDonationDate"
-    val missingMessage = s"validationService.giftAid.message.2"
+    val missingMessage = "validationService.giftAid.message.2"
     val input          = removeNonWesternCharacters(earliestDonationDateCell)
 
     if input.isEmpty then Left(ValidationError(fieldKey, missingMessage))
@@ -213,7 +215,7 @@ object GiftAidValidationService {
 
   private def validatePreviouslyOverclaimedAmount(previouslyOverClaimedAmountCell: String): Either[ValidationError, Option[BigDecimal]] = {
     val fieldKey              = "previouslyOverClaimedAmount"
-    val errorMessage          = s"validationService.giftAid.message.4"
+    val errorMessage          = "validationService.giftAid.message.4"
     val removeNonWesternChars = removeNonWesternCharacters(previouslyOverClaimedAmountCell)
     val normalized            = removeNonWesternChars.trim.replace(",", "")
 
@@ -223,7 +225,7 @@ object GiftAidValidationService {
         case Some(amount) =>
           val scaleOk     = amount.scale == 2
           val digitCnt    = amount.bigDecimal.unscaledValue.abs.toString.length
-          val digitsOk    = digitCnt <= 15
+          val digitsOk    = digitCnt <= Constants.maxMoneyDigits
           val notNegative = amount.signum >= 0
           if !scaleOk || !digitsOk || !notNegative then Left(ValidationError(fieldKey, errorMessage))
           else Right(Some(amount))
@@ -243,7 +245,7 @@ object GiftAidValidationService {
 
     if (input.isEmpty) {
       None.validNel
-    } else if (input.length > 35) {
+    } else if (input.length > Constants.maxAggregateDonationsLength) {
       invalid(field, s"$tooLongMsg")
     } else {
       Some(input).validNel
@@ -253,7 +255,7 @@ object GiftAidValidationService {
   private def validateItem(raw: String, index: Int): V[Int] = {
     val field = s"item[$index]"
     val input = removeNonWesternCharacters(raw)
-    val error = s"validationService.giftAid.message.6"
+    val error = "validationService.giftAid.message.6"
 
     val formatValid = input.matches("^[1-9][0-9]{0,3}$")
 
@@ -261,7 +263,7 @@ object GiftAidValidationService {
       invalid(field, error)
     } else {
       input.toIntOption match {
-        case Some(n) if n >= 1 && n <= 1000 =>
+        case Some(n) if n >= 1 && n <= Constants.giftAidValidationItemLength =>
           n.validNel
         case _ =>
           invalid(field, error)
@@ -326,7 +328,7 @@ object GiftAidValidationService {
         case Some(amount) =>
           val scaleOk  = amount.scale == 2
           val digitCnt = amount.bigDecimal.unscaledValue.abs.toString.length
-          val digitsOk = digitCnt <= 15
+          val digitsOk = digitCnt <= Constants.maxMoneyDigits
 
           if (!scaleOk || !digitsOk) {
             invalidFormat
@@ -380,14 +382,14 @@ object GiftAidValidationService {
       if (input.isEmpty) {
         invalid(
           fieldKey,
-          if fieldLabel.toLowerCase.contains("first name") then s"validationService.giftAid.message.14"
-          else s"validationService.giftAid.message.15"
+          if fieldLabel.toLowerCase.contains("first name") then "validationService.giftAid.message.14"
+          else "validationService.giftAid.message.15"
         )
-      } else if (input.length > 35) {
+      } else if (input.length > Constants.maxFirstNameLength) {
         invalid(
           fieldKey,
-          if fieldLabel.toLowerCase.contains("first name") then s"validationService.giftAid.message.16"
-          else s"validationService.giftAid.message.17"
+          if fieldLabel.toLowerCase.contains("first name") then "validationService.giftAid.message.16"
+          else "validationService.giftAid.message.17"
         )
       } else {
         Some(input).validNel
@@ -409,7 +411,7 @@ object GiftAidValidationService {
           field,
           "validationService.giftAid.message.18"
         ).invalidNel
-      } else if (input.length > 40) {
+      } else if (input.length > Constants.maxHouseNameLength) {
         ValidationError(
           field,
           "validationService.giftAid.message.19"
@@ -479,12 +481,12 @@ object GiftAidValidationService {
       ().validNel
     } else {
       val rules: List[(Boolean, String)] = List(
-        row.sponsoredEvent.trim.nonEmpty -> s"validationService.giftAid.message.23",
-        row.donorTitle.trim.nonEmpty     -> s"validationService.giftAid.message.24",
-        row.donorFirstName.trim.nonEmpty -> s"validationService.giftAid.message.25",
-        row.donorLastName.trim.nonEmpty  -> s"validationService.giftAid.message.26",
-        row.donorHouse.trim.nonEmpty     -> s"validationService.giftAid.message.27",
-        row.donorPostcode.trim.nonEmpty  -> s"validationService.giftAid.message.28"
+        row.sponsoredEvent.trim.nonEmpty -> "validationService.giftAid.message.23",
+        row.donorTitle.trim.nonEmpty     -> "validationService.giftAid.message.24",
+        row.donorFirstName.trim.nonEmpty -> "validationService.giftAid.message.25",
+        row.donorLastName.trim.nonEmpty  -> "validationService.giftAid.message.26",
+        row.donorHouse.trim.nonEmpty     -> "validationService.giftAid.message.27",
+        row.donorPostcode.trim.nonEmpty  -> "validationService.giftAid.message.28"
       )
 
       val errors = rules.filter(_._1).map(_._2)

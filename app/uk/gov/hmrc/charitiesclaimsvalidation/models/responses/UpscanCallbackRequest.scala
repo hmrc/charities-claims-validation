@@ -20,7 +20,7 @@ import play.api.libs.json.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.FailureDetails
 import eu.timepit.refined.types.all.NonEmptyString
-import uk.gov.hmrc.charitiesclaimsvalidation.models.formats.JsonImplicits.{*, given}
+import uk.gov.hmrc.charitiesclaimsvalidation.models.formats.JsonImplicits.given
 
 import java.time.Instant
 

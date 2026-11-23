@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation
 
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{Charity, ConnectedCharitiesData}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.ConnectedCharitiesRow
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.ValidationError
@@ -26,7 +27,7 @@ import cats.effect.unsafe.implicits.global
 
 class ConnectedCharitiesValidationServiceSpec extends BaseSpec {
 
-  val expectedResultForMultipleSpacesAndNewLines = ConnectedCharitiesData(charities =
+  val expectedResultForMultipleSpacesAndNewLines: ConnectedCharitiesData = ConnectedCharitiesData(charities =
     List(
       Charity(charityItem = Some(1), charityName = Some("Charity of the 501st Legion"), charityReference = Some("CW501")),
       Charity(charityItem = Some(2), charityName = Some("Save the Children --- UK Trust"), charityReference = Some("CW789")),
@@ -196,7 +197,7 @@ class ConnectedCharitiesValidationServiceSpec extends BaseSpec {
         )
 
       "return no errors when charity name is valid" in {
-        List("Valid Charity", "A", "a" * 160).foreach { name =>
+        List("Valid Charity", "A", "a" * Constants.maxCharityNameLength).foreach { name =>
           val (errorRows, validRows) = ConnectedCharitiesValidationService.validateRows(
             List(ConnectedCharitiesRowWithIndex(0, ConnectedCharitiesRow("1", name, "AB123")))
           )

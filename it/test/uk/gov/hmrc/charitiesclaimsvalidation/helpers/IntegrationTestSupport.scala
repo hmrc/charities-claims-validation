@@ -26,6 +26,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.retrieve.~
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
 import uk.gov.hmrc.charitiesclaimsvalidation.repositories.ClaimValidationStatusRepository
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.HeaderCarrier
@@ -42,7 +43,7 @@ class MockAuthConnector extends AuthConnector:
     Future.successful(
       `~`(
         Some(AffinityGroup.Organisation),
-        Enrolments(Set(Enrolment("HMRC-CHAR-ORG", Seq(EnrolmentIdentifier("CHARID", "1234567890")), "Activated")))
+        Enrolments(Set(Enrolment("HMRC-CHAR-ORG", Seq(EnrolmentIdentifier(Constants.charityKeyType, "1234567890")), "Activated")))
       ).asInstanceOf[A]
     )
 

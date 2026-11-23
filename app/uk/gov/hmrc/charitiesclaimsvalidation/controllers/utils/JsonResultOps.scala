@@ -18,8 +18,9 @@ package uk.gov.hmrc.charitiesclaimsvalidation.controllers.utils
 
 import play.api.libs.json.*
 import play.api.mvc.Result
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 import uk.gov.hmrc.charitiesclaimsvalidation.models.responses.ErrorResults.badRequest
 import uk.gov.hmrc.charitiesclaimsvalidation.models.responses.ErrorResponse
 
@@ -31,7 +32,7 @@ object JsonResultOps:
     errs.iterator
       .flatMap { case (_, ves) => ves.iterator }
       .collectFirst {
-        case e if e.message == "REQUIRED_PARAM_IS_EMPTY" =>
+        case e if e.message == Constants.requiredParamIsEmpty =>
           e.args.headOption.map(_.toString).getOrElse("param")
       }
 
@@ -39,7 +40,7 @@ object JsonResultOps:
     def foldWithRequiredParam(
       onRequiredEmpty: String => ErrorResponse,
       onOtherInvalid: String => ErrorResponse
-    )(onValid: A => Future[Result])(using ec: ExecutionContext): Future[Result] =
+    )(onValid: A => Future[Result]): Future[Result] =
       res.fold(
         invalid = errs => {
           firstRequiredEmptyParam(errs) match

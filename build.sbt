@@ -2,7 +2,7 @@ import uk.gov.hmrc.DefaultBuildSettings
 import play.sbt.PlayImport.PlayKeys.playDefaultPort
 
 ThisBuild / majorVersion := 0
-ThisBuild / scalaVersion := "3.3.6"
+ThisBuild / scalaVersion := "3.3.7"
 ThisBuild / scalacOptions += "-Wconf:msg=Flag.*repeatedly:s"
 
 lazy val appName: String = "charities-claims-validation"

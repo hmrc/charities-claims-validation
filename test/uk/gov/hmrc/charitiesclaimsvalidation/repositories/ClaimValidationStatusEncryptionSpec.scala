@@ -21,6 +21,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.mockito.Mockito.*
+import org.scalatest.concurrent.IntegrationPatience
 import uk.gov.hmrc.charitiesclaimsvalidation.config.AppConfig
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter, SymmetricCryptoFactory}
@@ -37,7 +38,8 @@ class ClaimValidationStatusEncryptionSpec
     with OptionValues
     with BeforeAndAfterEach
     with MongoSupport
-    with MockitoSugar:
+    with MockitoSugar
+    with IntegrationPatience:
 
   private val aesKey                           = "ci+wy7C6jftPw6tMdjnV60T+bJOgwDXEHmYk4XWKbsM="
   private val crypto: Encrypter with Decrypter = SymmetricCryptoFactory.aesGcmCrypto(aesKey)

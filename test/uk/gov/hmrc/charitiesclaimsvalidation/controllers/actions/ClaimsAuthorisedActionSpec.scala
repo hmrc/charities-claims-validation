@@ -23,6 +23,7 @@ import play.api.test.Helpers.*
 import play.api.mvc.*
 import uk.gov.hmrc.auth.core.retrieve.~
 import uk.gov.hmrc.auth.core.{AffinityGroup, AuthConnector, Enrolment, EnrolmentIdentifier, Enrolments, UnsupportedAffinityGroup}
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
 import uk.gov.hmrc.charitiesclaimsvalidation.util.BaseSpec
 
 import scala.concurrent.Future
@@ -45,7 +46,7 @@ class ClaimsAuthorisedActionSpec extends BaseSpec {
         Future.successful(
           `~`(
             Some(AffinityGroup.Organisation),
-            Enrolments(Set(Enrolment("HMRC-CHAR-ORG", Seq(EnrolmentIdentifier("CHARID", "1234567890")), "Activated")))
+            Enrolments(Set(Enrolment("HMRC-CHAR-ORG", Seq(EnrolmentIdentifier(Constants.charityKeyType, "1234567890")), "Activated")))
           )
         )
       )

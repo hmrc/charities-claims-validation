@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.charitiesclaimsvalidation.helpers
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import play.api.http.Status.OK
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
 import uk.gov.hmrc.charitiesclaimsvalidation.helpers.wiremock.WireMockServerHandler
 
 trait AuthStubs { self: WireMockServerHandler =>
@@ -35,7 +36,7 @@ trait AuthStubs { self: WireMockServerHandler =>
                |  "allEnrolments": [{
                |     "key": "HMRC-CHAR-ORG",
                |     "identifiers": [{
-               |       "key": "CHARID",
+               |       "key": "${Constants.charityKeyType}",
                |       "value": "example"
                |     }]
                |     },

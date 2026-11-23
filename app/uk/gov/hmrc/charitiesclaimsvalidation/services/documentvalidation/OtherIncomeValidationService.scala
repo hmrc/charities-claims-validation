@@ -30,6 +30,8 @@ import java.io.FileNotFoundException
 import java.time.LocalDate
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
+
 import scala.concurrent.Future
 import scala.util.Try
 
@@ -43,7 +45,7 @@ class OtherIncomeValidationService @Inject() ()(using ioRuntime: IORuntime) exte
     OdsReaderService
       .withDocumentStream(downloadUrl) { doc =>
         for {
-          sheetName                   <- verifySheetName(doc, ValidationType.OtherIncome)
+          _                           <- verifySheetName(doc, ValidationType.OtherIncome)
           rawOtherIncomeRowsWithIndex <- OdsReaderService.rowsFromDocumentWithIndex[OtherIncomeRow](doc, OtherIncomeRow.layout)
           _                           <- IO.raiseWhen(rawOtherIncomeRowsWithIndex.isEmpty)(NoRowsFoundException)
 
@@ -110,7 +112,7 @@ object OtherIncomeValidationService {
 
   private def validateAdjustment(adjustmentOtherIncomeCell: String): Either[ValidationError, Option[BigDecimal]] = {
     val fieldKey              = "adjustmentForOtherIncomePreviouslyOverClaimed"
-    val errorMessage          = s"validationService.otherIncome.message.2"
+    val errorMessage          = "validationService.otherIncome.message.2"
     val removeNonWesternChars = removeNonWesternCharacters(adjustmentOtherIncomeCell)
     val normalized            = removeNonWesternChars.trim.replace(",", "")
 
@@ -120,7 +122,7 @@ object OtherIncomeValidationService {
         case Some(amount) =>
           val scaleOk  = amount.scale == 2
           val digitCnt = amount.bigDecimal.unscaledValue.abs.toString.length
-          val digitsOk = digitCnt <= 15
+          val digitsOk = digitCnt <= Constants.maxMoneyDigits
           if !scaleOk then Left(ValidationError(fieldKey, errorMessage))
           else if !digitsOk then Left(ValidationError(fieldKey, errorMessage))
           else Right(Some(amount))
@@ -151,7 +153,7 @@ object OtherIncomeValidationService {
           else
             ValidationError(
               field = s"taxDeducted[$errorIndex]",
-              error = s"validationService.otherIncome.message.3"
+              error = "validationService.otherIncome.message.3"
             ).invalidNel
 
         case _ =>
@@ -191,7 +193,7 @@ object OtherIncomeValidationService {
       )
     else {
       val value = t.toInt
-      if value < 1 || value > 200 then
+      if value < 1 || value > Constants.maxOtherIncomeItemLength then
         invalid(
           field,
           "validationService.otherIncome.message.4"
@@ -209,7 +211,7 @@ object OtherIncomeValidationService {
         field,
         "validationService.otherIncome.message.5"
       )
-    else if t.length > 40 then
+    else if t.length > Constants.maxPayerNameLength then
       invalid(
         field,
         "validationService.otherIncome.message.6"
@@ -228,19 +230,19 @@ object OtherIncomeValidationService {
     if t.isEmpty then
       invalid(
         field,
-        s"validationService.otherIncome.message.7"
+        "validationService.otherIncome.message.7"
       )
     else {
       CommonFileValidation.parseDate(t) match {
         case None =>
           invalid(
             field,
-            s"validationService.otherIncome.message.8"
+            "validationService.otherIncome.message.8"
           )
         case Some(d) if d.isAfter(today) =>
           invalid(
             field,
-            s"validationService.otherIncome.message.9"
+            "validationService.otherIncome.message.9"
           )
         case Some(d) =>
           d.validNel
@@ -259,8 +261,8 @@ object OtherIncomeValidationService {
     if t.isEmpty then
       invalid(
         fieldKey,
-        if fieldLabel.toLowerCase.contains("a gross payment") then s"validationService.otherIncome.message.10"
-        else s"validationService.otherIncome.message.11"
+        if fieldLabel.toLowerCase.contains("a gross payment") then "validationService.otherIncome.message.10"
+        else "validationService.otherIncome.message.11"
       )
     else {
       val normalized = t.replace(",", "")
@@ -268,14 +270,14 @@ object OtherIncomeValidationService {
         case None =>
           invalid(
             fieldKey,
-            if fieldLabel.toLowerCase.contains("a gross payment") then s"validationService.otherIncome.message.12"
-            else s"validationService.otherIncome.message.13"
+            if fieldLabel.toLowerCase.contains("a gross payment") then "validationService.otherIncome.message.12"
+            else "validationService.otherIncome.message.13"
           )
 
         case Some(amount) =>
           val scaleOk  = amount.scale == 2
           val digitCnt = amount.bigDecimal.unscaledValue.abs.toString.length
-          val digitsOk = digitCnt <= 15
+          val digitsOk = digitCnt <= Constants.maxMoneyDigits
           val inRange  = amount >= moneyMin && amount <= moneyMax
 
           val errs: List[ValidationError] =
@@ -283,22 +285,22 @@ object OtherIncomeValidationService {
               Option.when(!scaleOk)(
                 ValidationError(
                   fieldKey,
-                  if fieldLabel.toLowerCase.contains("a gross payment") then s"validationService.otherIncome.message.12"
-                  else s"validationService.otherIncome.message.13"
+                  if fieldLabel.toLowerCase.contains("a gross payment") then "validationService.otherIncome.message.12"
+                  else "validationService.otherIncome.message.13"
                 )
               ),
               Option.when(!digitsOk)(
                 ValidationError(
                   fieldKey,
-                  if fieldLabel.toLowerCase.contains("a gross payment") then s"validationService.otherIncome.message.12"
-                  else s"validationService.otherIncome.message.13"
+                  if fieldLabel.toLowerCase.contains("a gross payment") then "validationService.otherIncome.message.12"
+                  else "validationService.otherIncome.message.13"
                 )
               ),
               Option.when(!inRange)(
                 ValidationError(
                   fieldKey,
-                  if fieldLabel.toLowerCase.contains("a gross payment") then s"validationService.otherIncome.message.12"
-                  else s"validationService.otherIncome.message.13"
+                  if fieldLabel.toLowerCase.contains("a gross payment") then "validationService.otherIncome.message.12"
+                  else "validationService.otherIncome.message.13"
                 )
               )
             ).flatten

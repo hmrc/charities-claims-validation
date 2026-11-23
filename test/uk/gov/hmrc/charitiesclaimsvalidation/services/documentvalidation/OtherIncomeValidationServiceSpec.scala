@@ -358,7 +358,7 @@ class OtherIncomeValidationServiceSpec extends BaseSpec with TableDrivenProperty
   }
 
   "return a list of invalid rows given spreadsheet where tax deducted must be less than the gross payment" in {
-    val (errorResult, validResult) = new OtherIncomeValidationService().validate(OtherIncomeBadCrossFieldDataPath).futureValue
+    val (errorResult, _) = new OtherIncomeValidationService().validate(OtherIncomeBadCrossFieldDataPath).futureValue
 
     errorResult shouldBe List(
       ValidationError("taxDeducted[0]", "validationService.otherIncome.message.13"),

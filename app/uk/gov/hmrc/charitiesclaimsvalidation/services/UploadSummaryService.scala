@@ -17,6 +17,7 @@
 package uk.gov.hmrc.charitiesclaimsvalidation.services
 
 import play.api.Logging
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{AwaitingUploadStatus, ClaimValidationStatus}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.responses.{UploadSummaryItem, UploadSummaryResponse}
 import uk.gov.hmrc.charitiesclaimsvalidation.repositories.ClaimValidationStatusRepository
@@ -31,8 +32,6 @@ class UploadSummaryService @Inject() (
   repository: ClaimValidationStatusRepository
 )(implicit ec: ExecutionContext)
     extends Logging {
-
-  private val ExpiryDays = 7
 
   def getUploadSummary(claimId: String): Future[Option[UploadSummaryResponse]] =
     repository.getClaimSummary(claimId).flatMap {
@@ -53,7 +52,7 @@ class UploadSummaryService @Inject() (
     uploads: Seq[ClaimValidationStatus]
   ): Future[Seq[ClaimValidationStatus]] = {
     val now                   = Instant.now()
-    val expiryThreshold       = now.minus(ExpiryDays, ChronoUnit.DAYS)
+    val expiryThreshold       = now.minus(Constants.uploadExpiryDays, ChronoUnit.DAYS)
     val (expired, nonExpired) = uploads.partition(isExpired(_, expiryThreshold))
 
     if (expired.isEmpty) {

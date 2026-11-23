@@ -20,6 +20,7 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.mvc.Results.{Created, InternalServerError}
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
 import uk.gov.hmrc.charitiesclaimsvalidation.models.responses.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
@@ -27,7 +28,6 @@ import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
 import java.time.temporal.ChronoUnit
 import uk.gov.hmrc.charitiesclaimsvalidation.models.requests.UploadRequest
 import uk.gov.hmrc.charitiesclaimsvalidation.repositories.ClaimValidationStatusRepository
-import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.Instant
 import javax.inject.{Inject, Singleton}
@@ -38,7 +38,7 @@ class ClaimReferenceService @Inject (repository: ClaimValidationStatusRepository
   val ec: ExecutionContext
 ) extends Logging {
 
-  def storeUploadStatus(claimId: String, uploadDetails: UploadRequest)(using hc: HeaderCarrier): Future[Result] = {
+  def storeUploadStatus(claimId: String, uploadDetails: UploadRequest): Future[Result] = {
     val reference = uploadDetails.reference.value
     logger.info(s"Storing upload status for claimId=$claimId, reference=$reference, validationType=${uploadDetails.validationType}")
     for {
@@ -101,8 +101,6 @@ class ClaimReferenceService @Inject (repository: ClaimValidationStatusRepository
     }
   }
 
-  private val expiryDays = 7
-
   def getUploadResult(claimId: String, reference: String): Future[Either[ErrorResponse, UploadResultResponse]] =
     repository.findByReference(claimId, reference).flatMap {
       case None =>
@@ -127,6 +125,6 @@ class ClaimReferenceService @Inject (repository: ClaimValidationStatusRepository
 
   private def isExpired(status: AwaitingUploadStatus): Boolean = {
     val daysSinceCreation = ChronoUnit.DAYS.between(status.createdAt, Instant.now())
-    daysSinceCreation >= expiryDays
+    daysSinceCreation >= Constants.uploadExpiryDays
   }
 }
