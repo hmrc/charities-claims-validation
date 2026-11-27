@@ -19,6 +19,7 @@ package uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation
 import cats.effect.*
 import org.w3c.dom.{Document, Element, Node}
 import play.api.Logger
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.errors.{BadSheetNameException, NotAnOdsFileException}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.*
 
@@ -152,18 +153,15 @@ object OdsReaderService:
         extractCellText(cell)
     }
 
-  private val maxIntegerDigits = 20
-
   private def roundedToPence(storedValue: String): Option[String] =
     Try(BigDecimal(storedValue)).toOption
-      .filter(value => value.precision - value.scale <= maxIntegerDigits)
+      .filter(value => value.precision - value.scale <= Constants.maxIntegerDigits)
       .map(_.bigDecimal.setScale(2, RoundingMode.HALF_EVEN).toPlainString)
 
-  private val isoDateLength      = 10
   private val scheduleDateFormat = DateTimeFormatter.ofPattern("dd/MM/uuuu")
 
   private def storedDate(storedValue: String): Option[String] =
-    Try(LocalDate.parse(storedValue.take(isoDateLength))).toOption
+    Try(LocalDate.parse(storedValue.take(Constants.isoDateLength))).toOption
       .map(_.format(scheduleDateFormat))
 
   private def extractCellText(cell: Element): String = {

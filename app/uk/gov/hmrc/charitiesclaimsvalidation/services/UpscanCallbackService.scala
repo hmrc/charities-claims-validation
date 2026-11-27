@@ -326,7 +326,7 @@ class UpscanCallbackService @Inject() (
         logger.info(s"Updated status for claimId=$claimId, reference=$reference to ${newStatus.fileStatus}")
         newStatus match
 
-          case status: ValidatingStatus =>
+          case _: ValidatingStatus =>
             CallbackResult.StartValidation
           case _ =>
             CallbackResult.Success

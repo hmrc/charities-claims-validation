@@ -67,7 +67,7 @@ class CommonFileValidationSpec extends BaseSpec {
         "\u2018 \u2019" // left/right single quotation marks around a space
       )
       blankInputs.foreach { input =>
-        withClue(s"Expected empty string for input: ") {
+        withClue("Expected empty string for input: ") {
           CommonFileValidation.removeNonWesternCharacters(input) shouldBe ""
         }
       }

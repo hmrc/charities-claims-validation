@@ -17,12 +17,12 @@
 package uk.gov.hmrc.charitiesclaimsvalidation.repositories
 
 import org.mockito.Mockito.*
+import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.charitiesclaimsvalidation.config.AppConfig
-import uk.gov.hmrc.charitiesclaimsvalidation.models.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter, SymmetricCryptoFactory}
 import uk.gov.hmrc.mongo.test.MongoSupport
@@ -38,7 +38,8 @@ class ClaimValidationStatusRepositorySpec
     with BeforeAndAfterEach
     with BeforeAndAfterAll
     with MongoSupport
-    with MockitoSugar:
+    with MockitoSugar
+    with IntegrationPatience:
 
   private val mockConfig = mock[AppConfig]
   when(mockConfig.replaceIndexes).thenReturn(true)

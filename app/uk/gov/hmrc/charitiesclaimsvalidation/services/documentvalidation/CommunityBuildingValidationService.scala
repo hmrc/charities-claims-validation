@@ -30,6 +30,7 @@ import java.io.FileNotFoundException
 import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
 
 import scala.concurrent.Future
 import scala.util.Try
@@ -44,7 +45,7 @@ class CommunityBuildingValidationService @Inject() ()(using ioRuntime: IORuntime
     OdsReaderService
       .withDocumentStream(downloadUrl) { doc =>
         for {
-          sheetName                         <- verifySheetName(doc, ValidationType.CommunityBuildings)
+          _                                 <- verifySheetName(doc, ValidationType.CommunityBuildings)
           rawCommunityBuildingRowsWithIndex <- OdsReaderService.rowsFromDocumentWithIndex[CommunityBuildingRow](doc, CommunityBuildingRow.layout)
           _                                 <- IO.raiseWhen(rawCommunityBuildingRowsWithIndex.isEmpty)(NoRowsFoundException)
 
@@ -162,14 +163,14 @@ object CommunityBuildingValidationService {
     if !t.matches("^[1-9][0-9]{0,2}$") then
       invalid(
         field,
-        s"validationService.communityBuildings.message.2"
+        "validationService.communityBuildings.message.2"
       )
     else {
       val value = t.toInt
-      if value < 1 || value > 500 then
+      if value < 1 || value > Constants.maxCommunityBuildingItemLength then
         invalid(
           field,
-          s"validationService.communityBuildings.message.2"
+          "validationService.communityBuildings.message.2"
         )
       else value.validNel
     }
@@ -182,12 +183,12 @@ object CommunityBuildingValidationService {
     if t.isEmpty then
       invalid(
         field,
-        s"validationService.communityBuildings.message.3"
+        "validationService.communityBuildings.message.3"
       )
-    else if t.length > 160 then
+    else if t.length > Constants.maxBuildingNameLength then
       invalid(
         field,
-        s"validationService.communityBuildings.message.4"
+        "validationService.communityBuildings.message.4"
       )
     else t.validNel
   }
@@ -199,12 +200,12 @@ object CommunityBuildingValidationService {
     if t.isEmpty then
       invalid(
         field,
-        s"validationService.communityBuildings.message.5"
+        "validationService.communityBuildings.message.5"
       )
-    else if t.length > 40 then
+    else if t.length > Constants.maxAddressLineLength then
       invalid(
         field,
-        s"validationService.communityBuildings.message.6"
+        "validationService.communityBuildings.message.6"
       )
     else t.validNel
   }
@@ -219,12 +220,12 @@ object CommunityBuildingValidationService {
     if t.isEmpty then
       invalid(
         field,
-        s"validationService.communityBuildings.message.7"
+        "validationService.communityBuildings.message.7"
       )
     else if !t.toUpperCase.matches(postcodePattern) then
       invalid(
         field,
-        s"validationService.communityBuildings.message.8"
+        "validationService.communityBuildings.message.8"
       )
     else t.validNel
   }
@@ -244,32 +245,32 @@ object CommunityBuildingValidationService {
       if required then
         invalid(
           field,
-          if label.toLowerCase.contains("first") then s"validationService.communityBuildings.message.9"
-          else s"validationService.communityBuildings.message.10"
+          if label.toLowerCase.contains("first") then "validationService.communityBuildings.message.9"
+          else "validationService.communityBuildings.message.10"
         )
       else 0.validNel // Unused placeholder - validateTaxYear2Conditional discards this when both fields empty
     } else if !t.matches("^\\d{4}$") || !t.toIntOption.exists(_ >= 1) then {
       invalid(
         field,
-        if label.toLowerCase.contains("first") then s"validationService.communityBuildings.message.11"
-        else s"validationService.communityBuildings.message.12"
+        if label.toLowerCase.contains("first") then "validationService.communityBuildings.message.11"
+        else "validationService.communityBuildings.message.12"
       )
     } else {
       val year           = t.toInt
       val currentTaxYear = getCurrentTaxYear(now)
-      val earliestYear   = currentTaxYear - 3
+      val earliestYear   = currentTaxYear - Constants.maxCommunityBuildingTaxYears
 
       val errs: List[ValidationError] = List(
         Option.when(year > currentTaxYear)(
           ValidationError(
             field,
-            s"validationService.communityBuildings.message.14"
+            "validationService.communityBuildings.message.14"
           )
         ),
         Option.when(year < earliestYear)(
           ValidationError(
             field,
-            s"validationService.communityBuildings.message.15"
+            "validationService.communityBuildings.message.15"
           )
         )
       ).flatten
@@ -294,8 +295,8 @@ object CommunityBuildingValidationService {
       if required then
         invalid(
           field,
-          if label.toLowerCase.contains("first") then s"validationService.communityBuildings.message.16"
-          else s"validationService.communityBuildings.message.17"
+          if label.toLowerCase.contains("first") then "validationService.communityBuildings.message.16"
+          else "validationService.communityBuildings.message.17"
         )
       else BigDecimal(0).validNel // Unused placeholder - validateTaxYear2Conditional discards this when both fields empty
     } else {
@@ -304,36 +305,36 @@ object CommunityBuildingValidationService {
         case None =>
           invalid(
             field,
-            if label.toLowerCase.contains("first") then s"validationService.communityBuildings.message.18"
-            else s"validationService.communityBuildings.message.19"
+            if label.toLowerCase.contains("first") then "validationService.communityBuildings.message.18"
+            else "validationService.communityBuildings.message.19"
           )
 
         case Some(amount) =>
           val scaleOk  = amount.scale == 2
           val digitCnt = amount.bigDecimal.unscaledValue.abs.toString.length
-          val digitsOk = digitCnt <= 15
+          val digitsOk = digitCnt <= Constants.maxMoneyDigits
           val inRange  = amount >= moneyMin && amount <= moneyMax
 
           val errs: List[ValidationError] = List(
             Option.when(!scaleOk)(
               ValidationError(
                 field,
-                if label.toLowerCase.contains("first") then s"validationService.communityBuildings.message.18"
-                else s"validationService.communityBuildings.message.19"
+                if label.toLowerCase.contains("first") then "validationService.communityBuildings.message.18"
+                else "validationService.communityBuildings.message.19"
               )
             ),
             Option.when(!digitsOk)(
               ValidationError(
                 field,
-                if label.toLowerCase.contains("first") then s"validationService.communityBuildings.message.18"
-                else s"validationService.communityBuildings.message.19"
+                if label.toLowerCase.contains("first") then "validationService.communityBuildings.message.18"
+                else "validationService.communityBuildings.message.19"
               )
             ),
             Option.when(!inRange)(
               ValidationError(
                 field,
-                if label.toLowerCase.contains("first") then s"validationService.communityBuildings.message.18"
-                else s"validationService.communityBuildings.message.19"
+                if label.toLowerCase.contains("first") then "validationService.communityBuildings.message.18"
+                else "validationService.communityBuildings.message.19"
               )
             )
           ).flatten
@@ -372,13 +373,13 @@ object CommunityBuildingValidationService {
       case (true, false) =>
         invalid(
           s"amount2[$index]",
-          s"validationService.communityBuildings.message.10"
+          "validationService.communityBuildings.message.10"
         )
 
       case (false, true) =>
         invalid(
           s"taxYear2[$index]",
-          s"validationService.communityBuildings.message.17"
+          "validationService.communityBuildings.message.17"
         )
     }
   }
@@ -394,7 +395,7 @@ object CommunityBuildingValidationService {
     if year1 == year2 then {
       invalid(
         s"taxYear2[$index]",
-        s"validationService.communityBuildings.message.20"
+        "validationService.communityBuildings.message.20"
       )
     } else {
       ().validNel
@@ -450,7 +451,7 @@ object CommunityBuildingValidationService {
     taxYearsWithIndices.foreach { case (taxYear, errorIndex) =>
       if !seenYears.contains(taxYear) then {
         seenYears += taxYear
-        if seenYears.size > 3 then {
+        if seenYears.size > Constants.maxCommunityBuildingTaxYears then {
           indicesExceedingLimit += errorIndex
         }
       }

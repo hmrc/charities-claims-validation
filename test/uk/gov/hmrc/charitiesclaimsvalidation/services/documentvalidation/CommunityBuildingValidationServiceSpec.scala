@@ -17,13 +17,14 @@
 package uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation
 
 import org.scalatest.prop.TableDrivenPropertyChecks
-import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{CommunityBuilding, CommunityBuildingData, ValidationError}
+import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{CommunityBuilding, ValidationError}
 import uk.gov.hmrc.charitiesclaimsvalidation.models.validation.CommunityBuildingRow
 import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommunityBuildingValidationService.*
 import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommunityBuildingValidationServiceSpec.*
 import uk.gov.hmrc.charitiesclaimsvalidation.util.BaseSpec
-
 import cats.effect.unsafe.implicits.global
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
+
 import java.time.LocalDateTime
 
 class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPropertyChecks {
@@ -96,7 +97,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
     }
 
     "return a single second date validation error if the second tax year is invalid" in {
-      val (errorResult, validResult) =
+      val (errorResult, _) =
         new CommunityBuildingValidationService().validate(CommunityBuildingBadSecondTaxDateDataPath).futureValue
 
       errorResult shouldBe List(
@@ -108,7 +109,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
     }
 
     "return date validation errors if tax year is earlier than last 3 tax years or the tax year is future tax year " in {
-      val (errorResult, validResult) =
+      val (errorResult, _) =
         new CommunityBuildingValidationService().validate(CommunityBuildingCurrentTaxYearDataPath).futureValue
 
       errorResult shouldBe List(
@@ -124,7 +125,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
     }
 
     "return a validation error if the spreadsheet is invalid XML" in {
-      val (errorResult, validResult) =
+      val (errorResult, _) =
         new CommunityBuildingValidationService().validate(CommunityBuildingInvalidXmlDataPath).futureValue
 
       errorResult shouldBe List(
@@ -280,7 +281,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       errors.head.error shouldBe "validationService.communityBuildings.message.2"
     }
 
-    "reject building name exceeding 160 characters" in {
+    s"reject building name exceeding ${Constants.maxBuildingNameLength} characters" in {
       val row = BuildingRowWithIndex(
         0,
         CommunityBuildingRow(
@@ -331,12 +332,12 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       }
     }
 
-    "accept building name at exactly 160 characters" in {
+    s"accept building name at exactly ${Constants.maxBuildingNameLength} characters" in {
       val row = BuildingRowWithIndex(
         0,
         CommunityBuildingRow(
           item = "1",
-          buildingName = "A" * 160,
+          buildingName = "A" * Constants.maxBuildingNameLength,
           firstLineOfAddress = "123 Street",
           postcode = "SW1A 1AA",
           taxYear1 = "2023",
@@ -387,7 +388,7 @@ class CommunityBuildingValidationServiceSpec extends BaseSpec with TableDrivenPr
       )
     }
 
-    "reject address exceeding 40 characters" in {
+    s"reject address exceeding ${Constants.maxAddressLineLength} characters" in {
       val row = BuildingRowWithIndex(
         0,
         CommunityBuildingRow(

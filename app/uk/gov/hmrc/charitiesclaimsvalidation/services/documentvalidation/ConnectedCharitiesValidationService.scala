@@ -28,6 +28,8 @@ import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.CommonF
 import java.io.FileNotFoundException
 import javax.inject.{Inject, Singleton}
 import play.api.Logging
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
+
 import scala.concurrent.Future
 
 @Singleton()
@@ -40,7 +42,7 @@ class ConnectedCharitiesValidationService @Inject() ()(using ioRuntime: IORuntim
     OdsReaderService
       .withDocumentStream(downloadUrl) { doc =>
         for {
-          sheetName                     <- verifySheetName(doc, ValidationType.ConnectedCharities)
+          _                             <- verifySheetName(doc, ValidationType.ConnectedCharities)
           connectCharitiesRowsWithIndex <- OdsReaderService.rowsFromDocumentWithIndex[ConnectedCharitiesRow](doc, ConnectedCharitiesRow.layout)
           _                             <- IO.raiseWhen(connectCharitiesRowsWithIndex.isEmpty)(NoRowsFoundException)
 
@@ -131,14 +133,14 @@ object ConnectedCharitiesValidationService {
     if !t.matches("^[1-9][0-9]{0,2}$") then
       invalid(
         field,
-        s"validationService.connectedCharities.message.2"
+        "validationService.connectedCharities.message.2"
       )
     else {
       val value = t.toInt
-      if value < 1 || value > 200 then
+      if value < 1 || value > Constants.maxConnectedCharitiesItemLength then
         invalid(
           field,
-          s"validationService.connectedCharities.message.2"
+          "validationService.connectedCharities.message.2"
         )
       else value.validNel
     }
@@ -151,12 +153,12 @@ object ConnectedCharitiesValidationService {
     if t.isEmpty then
       invalid(
         field,
-        s"validationService.connectedCharities.message.3"
+        "validationService.connectedCharities.message.3"
       )
-    else if t.length > 160 then
+    else if t.length > Constants.maxCharityNameLength then
       invalid(
         field,
-        s"validationService.connectedCharities.message.4"
+        "validationService.connectedCharities.message.4"
       )
     else t.validNel
   }

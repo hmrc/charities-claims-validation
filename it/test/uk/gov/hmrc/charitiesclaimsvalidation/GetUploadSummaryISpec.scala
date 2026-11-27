@@ -17,6 +17,7 @@
 package uk.gov.hmrc.charitiesclaimsvalidation
 
 import play.api.test.Helpers.*
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
 import uk.gov.hmrc.charitiesclaimsvalidation.helpers.IntegrationTestSupport
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.{AwaitingUploadStatus, ValidatedStatus, ValidationType, VerifyingStatus}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
@@ -111,7 +112,7 @@ class GetUploadSummaryISpec extends IntegrationTestSupport:
       (response.json \ "error").as[String] shouldBe "CLAIM_DOES_NOT_EXIST"
       (response.json \ "message").as[String] should include(claimId)
 
-    "return 404 and purge expired AWAITING_UPLOAD entries (7+ days old)" in:
+    s"return 404 and purge expired AWAITING_UPLOAD entries ({$Constants.uploadExpiryDays}+ days old)" in:
       val expiredTimestamp = Instant.now().minus(8, ChronoUnit.DAYS)
       val expiredStatus = AwaitingUploadStatus(
         claimId = claimId,

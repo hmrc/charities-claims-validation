@@ -24,6 +24,7 @@ import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.retrieve.~
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
 import uk.gov.hmrc.charitiesclaimsvalidation.controllers.actions.DefaultClaimsAuthorisedAction
 
 import scala.concurrent.Future
@@ -46,7 +47,7 @@ trait ControllerSpec extends BaseSpec {
 
     private val orgEnrolment = Enrolment(
       key = "HMRC-CHAR-ORG",
-      identifiers = Seq(EnrolmentIdentifier("CHARID", "1234567890")),
+      identifiers = Seq(EnrolmentIdentifier(Constants.charityKeyType, "1234567890")),
       state = "Activated"
     )
 

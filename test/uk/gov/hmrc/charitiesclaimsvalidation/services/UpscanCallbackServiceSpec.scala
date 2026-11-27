@@ -27,7 +27,6 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.mockito.MockitoSugar
 import org.mockito.ArgumentCaptor
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
-import uk.gov.hmrc.charitiesclaimsvalidation.models.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.responses.{UploadDetails, UpscanFailureRequest, UpscanSuccessRequest}
 import uk.gov.hmrc.charitiesclaimsvalidation.repositories.ClaimValidationStatusRepository
 import uk.gov.hmrc.charitiesclaimsvalidation.services.documentvalidation.{CommonFileValidation, CommunityBuildingValidationService, ConnectedCharitiesValidationService, GiftAidValidationService, OtherIncomeValidationService}
@@ -883,7 +882,7 @@ class UpscanCallbackServiceSpec extends AnyWordSpec with Matchers with MockitoSu
         validationType = ValidationType.GiftAid,
         failureDetails = FailureDetails(
           failureReason = FailureReason.Rejected,
-          message = s"MIME type application/pdf is not allowed"
+          message = "MIME type application/pdf is not allowed"
         ),
         createdAt = timestamp,
         updatedAt = timestamp

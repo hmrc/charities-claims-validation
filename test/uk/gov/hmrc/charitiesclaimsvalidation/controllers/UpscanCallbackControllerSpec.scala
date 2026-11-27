@@ -20,14 +20,13 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{BeforeAndAfterAll, matchers}
+import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.http.Status
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.charitiesclaimsvalidation.models.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.domain.*
 import uk.gov.hmrc.charitiesclaimsvalidation.models.responses.UpscanCallbackRequest
 import uk.gov.hmrc.charitiesclaimsvalidation.services.{CallbackResult, UpscanCallbackService}
@@ -275,7 +274,7 @@ class UpscanCallbackControllerSpec extends AnyWordSpec with Matchers with Mockit
         validationType = ValidationType.GiftAid,
         failureDetails = FailureDetails(
           failureReason = FailureReason.Rejected,
-          message = s"MIME type application/pdf is not allowed"
+          message = "MIME type application/pdf is not allowed"
         ),
         createdAt = createdAtTimestamp,
         updatedAt = updatedAtTimestamp

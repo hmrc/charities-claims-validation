@@ -74,20 +74,20 @@ object CommonFileValidation {
       "ERROR: The file specified is not an ODF (Open Document Format) spreadsheet (.ods). Please attach a valid file to continue."
     )
 
-  val spreadsheetFileNotFound =
+  val spreadsheetFileNotFound: ValidationError =
     ValidationError(
       "fileError",
       "validationService.commonFile.message.1"
     )
 
   // this is left as-is since validation done via the front-end
-  val spreadsheetUnexpectedError =
+  val spreadsheetUnexpectedError: ValidationError =
     ValidationError(
       "fileError",
       "validationService.commonFile.message.2"
     )
 
-  val sheetNameIsDifferent =
+  val sheetNameIsDifferent: ValidationError =
     ValidationError(
       "fileError",
       "validationService.commonFile.message.3"
@@ -101,7 +101,7 @@ object CommonFileValidation {
     } yield sheetName
   }
 
-  def isCorrectSheetName(sheetName: String, validationType: ValidationType): Boolean = {
+  private def isCorrectSheetName(sheetName: String, validationType: ValidationType): Boolean = {
     val name = sheetName.trim
 
     validationType match {

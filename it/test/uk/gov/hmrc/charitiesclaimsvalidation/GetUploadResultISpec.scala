@@ -27,6 +27,7 @@ import play.api.inject.ApplicationLifecycle
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
+import uk.gov.hmrc.charitiesclaimsvalidation.config.Constants
 import uk.gov.hmrc.charitiesclaimsvalidation.controllers.routes
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
@@ -42,6 +43,7 @@ import java.net.URI
 import java.time.Instant
 import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.{DAYS, Duration}
 import scala.concurrent.duration.Duration.Inf
 
 class GetUploadResultISpec
@@ -438,10 +440,11 @@ class GetUploadResultISpec
     (result.json \ "error").as[String] shouldBe "CLAIM_REFERENCE_DOES_NOT_EXIST"
   }
 
-  test("GET upload result returns 404 and deletes document when AWAITING_UPLOAD is expired (7+ days old)") {
+  test(s"GET upload result returns 404 and deletes document when AWAITING_UPLOAD is expired ({$Constants.uploadExpiryDays}+ days old)") {
     stubAuthenticate()
 
-    val expiredTimestamp = Instant.now().minusSeconds(60 * 60 * 24 * 8) // 8 days ago
+    val expiredTimestamp = Instant.now().minusSeconds(Duration(Constants.uploadExpiryDays, DAYS).toSeconds + 1)
+    
     val status = AwaitingUploadStatus(
       claimId = claimId,
       reference = reference,
